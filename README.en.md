@@ -1,6 +1,6 @@
 # Gleanbook (拾账)
 
-[![CI](https://github.com/Xuanlin233/gleanbook/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuanlin233/gleanbook/actions/workflows/ci.yml)
+[![CI](https://github.com/Xuanlin233/GleanBook/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuanlin233/GleanBook/actions/workflows/ci.yml)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
 [简体中文](README.md) | English
@@ -36,8 +36,8 @@ Gleanbook was built for someone living in China: CNY is the reporting currency, 
 No keys or accounts needed. With [Node.js 24](https://nodejs.org/) or later:
 
 ```bash
-git clone https://github.com/Xuanlin233/gleanbook.git
-cd gleanbook
+git clone https://github.com/Xuanlin233/GleanBook.git
+cd GleanBook
 npm ci
 npm run build
 npm start

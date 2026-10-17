@@ -42,6 +42,8 @@ test('更新等待用户操作；未提交表单不刷新，更新后草稿完�
     await page.getByRole('button', { name: '添加账户', exact: true }).click();
     await page.getByLabel('账户名称').fill('更新测试账户');
     await page.getByRole('button', { name: '保存账户' }).click();
+    // The dialog closes once the account is written; reloading earlier can lose it.
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
     });

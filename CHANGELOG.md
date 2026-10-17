@@ -30,5 +30,5 @@ Format based on Keep a Changelog; versions follow Semantic Versioning.
 - 后端与启动器的终端提示、`docs/` 下的详细文档目前只有中文。
 - 只接入了 OKX 一家交易所；行情、基金、节假日与汇率数据源以中国大陆为主。
 
-[未发布 / Unreleased]: https://github.com/Xuanlin233/gleanbook/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Xuanlin233/gleanbook/releases/tag/v0.1.0
+[未发布 / Unreleased]: https://github.com/Xuanlin233/GleanBook/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Xuanlin233/GleanBook/releases/tag/v0.1.0

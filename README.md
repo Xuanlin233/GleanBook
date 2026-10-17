@@ -1,6 +1,6 @@
 # 拾账 Gleanbook
 
-[![CI](https://github.com/Xuanlin233/gleanbook/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuanlin233/gleanbook/actions/workflows/ci.yml)
+[![CI](https://github.com/Xuanlin233/GleanBook/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuanlin233/GleanBook/actions/workflows/ci.yml)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
 简体中文 | [English](README.en.md)
@@ -36,8 +36,8 @@ _截图均为内置演示账本的虚构数据。_
 不需要任何密钥或账号。装好 [Node.js 24](https://nodejs.org/) 或以上后：
 
 ```bash
-git clone https://github.com/Xuanlin233/gleanbook.git
-cd gleanbook
+git clone https://github.com/Xuanlin233/GleanBook.git
+cd GleanBook
 npm ci
 npm run build
 npm start
