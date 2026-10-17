@@ -1,0 +1,48 @@
+{
+  "name": "gleanbook",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "description": "拾账 Gleanbook：私有、离线优先的个人记账与资产管理网站，电脑主库多设备同步。",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build && node scripts/build-sw.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "server": "tsx server/index.ts",
+    "start": "tsx server/index.ts",
+    "start:private": "tsx scripts/start-private.ts",
+    "forget:okx": "tsx scripts/forget-okx.ts",
+    "autostart:on": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/autostart.ps1",
+    "autostart:off": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/autostart.ps1 -Remove",
+    "diagnose:okx": "tsx scripts/diagnose-okx.ts",
+    "diagnose:okx:private": "tsx scripts/diagnose-okx.ts --private",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "tsc -b",
+    "format": "prettier --write src server tests scripts/build-sw.mjs *.ts *.json README.md docs/*.md"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
+    "decimal.js": "10.6.0",
+    "idb": "8.0.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tsx": "4.23.15",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

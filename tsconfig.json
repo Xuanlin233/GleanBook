@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["vite/client", "node"]
+  },
+  "include": [
+    "src",
+    "server",
+    "tests",
+    "scripts/start-private.ts",
+    "scripts/credential-store.ts",
+    "scripts/forget-okx.ts",
+    "scripts/tailscale.ts",
+    "scripts/diagnose-okx.ts",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ]
+}

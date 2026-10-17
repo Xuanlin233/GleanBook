@@ -1,0 +1,1056 @@
+/*
+ * 拾账视觉主题：Apple 官网的排版与留白 + OKX 移动端的数字层级，导航与控件使用液态玻璃材质。
+ * 这一层排在 styles.css 的所有层之后，只覆盖视觉属性；布局沿用原有规则，需要改动的布局
+ * 在本文件内按同样的断点（1050 / 760px）成组处理。
+ * 液态玻璃只用于导航与控件（侧栏、顶栏、底部标签栏、分段控件、弹窗、提示），内容卡片保持实底，
+ * 保证金额清晰可读；“减少透明度”和不支持 backdrop-filter 时回退为不透明材质。
+ */
+@layer theme {
+  :root {
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'PingFang SC',
+      'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei UI', 'Segoe UI Variable Text', 'Segoe UI',
+      system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+
+    /* Light: Apple.com neutrals. Text colors keep ≥4.5:1 on both --bg and --surface. */
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --surface-soft: #f2f2f5;
+    --field: #f2f2f5;
+    --hover: rgb(0 0 0 / 0.04);
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --faint: #6e6e73;
+    --blue: #0066cc;
+    --accent: #0071e3;
+    --on-accent: #ffffff;
+    --blue-soft: rgb(0 113 227 / 0.1);
+    --border: rgb(0 0 0 / 0.08);
+    --hairline: rgb(0 0 0 / 0.06);
+    --gain: #0f8a4f;
+    --loss: #d1243a;
+    --empty-ring: #e8e8ed;
+    --shadow: 0 24px 64px rgb(0 0 0 / 0.14);
+    --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 24px rgb(0 0 0 / 0.04);
+
+    /* Liquid glass material */
+    --glass: rgb(255 255 255 / 0.58);
+    --glass-strong: rgb(255 255 255 / 0.8);
+    --glass-edge: rgb(255 255 255 / 0.75);
+    --glass-outline: rgb(0 0 0 / 0.07);
+    --glass-sheen: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.55) 0%,
+      rgb(255 255 255 / 0.08) 38%,
+      rgb(255 255 255 / 0) 60%
+    );
+    --glass-shadow:
+      inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 rgb(0 0 0 / 0.03),
+      0 0 0 1px var(--glass-outline), 0 10px 36px rgb(0 0 0 / 0.08);
+    --glass-blur: blur(26px) saturate(185%);
+    --glass-thumb: #ffffff;
+    --glass-thumb-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 3px 10px rgb(0 0 0 / 0.08);
+
+    --radius-card: 22px;
+    --radius-control: 12px;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --ambient:
+      radial-gradient(1100px 620px at 8% -12%, rgb(0 113 227 / 0.13), transparent 62%),
+      radial-gradient(900px 560px at 108% 4%, rgb(48 209 88 / 0.08), transparent 60%),
+      radial-gradient(800px 600px at 50% 112%, rgb(10 132 255 / 0.07), transparent 60%);
+    background: var(--bg);
+    color: var(--text);
+  }
+  /* Dark: OKX app black with Apple dark-mode greys; OKX green / red for gains. */
+  :root[data-theme='dark'] {
+    --bg: #000000;
+    --surface: #111113;
+    --surface-soft: #1c1c1f;
+    --field: #1c1c1f;
+    --hover: rgb(255 255 255 / 0.05);
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --faint: #a1a1a6;
+    --blue: #2997ff;
+    --accent: #0071e3;
+    --on-accent: #ffffff;
+    --blue-soft: rgb(41 151 255 / 0.16);
+    --border: rgb(255 255 255 / 0.1);
+    --hairline: rgb(255 255 255 / 0.07);
+    --gain: #2ebd85;
+    --loss: #f6465d;
+    --empty-ring: #26262a;
+    --shadow: 0 24px 72px rgb(0 0 0 / 0.6);
+    --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+
+    --glass: rgb(30 30 34 / 0.55);
+    --glass-strong: rgb(28 28 32 / 0.82);
+    --glass-edge: rgb(255 255 255 / 0.14);
+    --glass-outline: rgb(255 255 255 / 0.08);
+    --glass-sheen: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.1) 0%,
+      rgb(255 255 255 / 0.02) 40%,
+      rgb(255 255 255 / 0) 60%
+    );
+    --glass-shadow:
+      inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 rgb(0 0 0 / 0.3),
+      0 0 0 1px var(--glass-outline), 0 12px 40px rgb(0 0 0 / 0.5);
+    --glass-thumb: rgb(255 255 255 / 0.16);
+    --glass-thumb-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 2px 8px rgb(0 0 0 / 0.4);
+    --ambient:
+      radial-gradient(1000px 600px at 6% -14%, rgb(41 151 255 / 0.16), transparent 62%),
+      radial-gradient(900px 560px at 110% 0%, rgb(46 189 133 / 0.08), transparent 60%);
+  }
+  :root[data-gain='red'] {
+    --gain: #d1243a;
+    --loss: #0f8a4f;
+  }
+  :root[data-theme='dark'][data-gain='red'] {
+    --gain: #f6465d;
+    --loss: #2ebd85;
+  }
+
+  body {
+    background: var(--ambient), var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+  }
+  ::selection {
+    background: rgb(0 113 227 / 0.22);
+  }
+
+  /* ---------- Typography (Apple-style tight display headings) ---------- */
+  h1 {
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  h2 {
+    font-size: 19px;
+    font-weight: 650;
+    letter-spacing: -0.012em;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 620;
+    letter-spacing: -0.01em;
+  }
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--blue);
+    margin-bottom: 10px;
+  }
+  .page-heading {
+    margin-bottom: 32px;
+  }
+  .page-heading p:last-child {
+    font-size: 15px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+  .subtle,
+  small {
+    font-size: 12px;
+  }
+
+  /* ---------- Controls ---------- */
+  input,
+  select,
+  textarea {
+    background: var(--field);
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    min-height: 46px;
+    padding: 11px 14px;
+    transition:
+      border-color 0.2s var(--ease),
+      box-shadow 0.2s var(--ease),
+      background 0.2s var(--ease);
+  }
+  input:hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--border);
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: 0;
+    border-color: transparent;
+    box-shadow: 0 0 0 5px var(--blue-soft);
+    background: var(--surface);
+  }
+  input[type='checkbox'] {
+    accent-color: var(--accent);
+    min-height: 18px;
+    padding: 0;
+    box-shadow: none;
+  }
+  .field > span {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+  }
+
+  .button {
+    border-radius: 999px;
+    min-height: 42px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 560;
+    letter-spacing: -0.005em;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition:
+      background 0.2s var(--ease),
+      transform 0.18s var(--ease),
+      box-shadow 0.2s var(--ease),
+      filter 0.2s var(--ease);
+  }
+  .button:hover:not(:disabled) {
+    background: var(--surface-soft);
+  }
+  .button:active:not(:disabled) {
+    transform: scale(0.97);
+    opacity: 1;
+  }
+  .button.primary,
+  :root[data-theme='dark'] .button.primary {
+    background: var(--accent);
+    border-color: transparent;
+    color: var(--on-accent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 6px 18px rgb(0 113 227 / 0.28);
+  }
+  .button.primary:hover:not(:disabled) {
+    background: var(--accent);
+    filter: brightness(1.08);
+  }
+  .button.text {
+    background: none;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--blue);
+    padding: 8px 6px;
+    font-size: 14px;
+  }
+  .button.text:hover:not(:disabled) {
+    background: var(--blue-soft);
+  }
+  .button.danger {
+    color: var(--loss);
+  }
+  .icon-button {
+    border-radius: 50%;
+    color: var(--muted);
+    transition:
+      background 0.2s var(--ease),
+      color 0.2s var(--ease),
+      transform 0.18s var(--ease);
+  }
+  .icon-button:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+  .icon-button:active:not(:disabled) {
+    transform: scale(0.92);
+    opacity: 1;
+  }
+  .tiny-pill {
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--surface-soft);
+    color: var(--muted);
+  }
+
+  /* ---------- Liquid glass material (navigation & controls only) ---------- */
+  .sidebar,
+  .topbar,
+  .bottom-nav,
+  .segmented,
+  .modal,
+  .toast {
+    background: var(--glass-sheen), var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Sidebar: a floating glass pane, inset from the window edge (macOS-style). */
+  .sidebar {
+    inset: 12px auto 12px 12px;
+    border: 0;
+    border-radius: 26px;
+    padding: 26px 14px 18px;
+  }
+  .main-shell {
+    margin-left: 240px;
+  }
+  .brand {
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    padding: 0 10px;
+  }
+  .brand small {
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    margin-top: 1px;
+  }
+  .brand-icon,
+  .app-icon {
+    background: linear-gradient(160deg, #3d9bff 0%, #0071e3 55%, #0058b9 100%);
+    color: #fff;
+    border-radius: 12px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      0 6px 16px rgb(0 113 227 / 0.35);
+  }
+  .workspace-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    margin: 36px 12px 10px;
+  }
+  .sidebar nav {
+    gap: 4px;
+  }
+  .sidebar nav button {
+    border-radius: 14px;
+    min-height: 46px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    transition:
+      background 0.2s var(--ease),
+      color 0.2s var(--ease);
+  }
+  .sidebar nav button svg {
+    color: var(--muted);
+  }
+  .sidebar nav button:hover {
+    background: var(--hover);
+  }
+  .sidebar nav button.selected,
+  .sidebar nav button.selected:hover {
+    background: var(--glass-thumb);
+    box-shadow: var(--glass-thumb-shadow);
+    color: var(--text);
+    font-weight: 650;
+  }
+  .sidebar nav button.selected svg {
+    color: var(--blue);
+  }
+  .sidebar nav i {
+    background: var(--blue);
+  }
+  .sidebar-add,
+  :root[data-theme='dark'] .sidebar-add {
+    border-radius: 999px;
+    min-height: 46px;
+    margin: 26px 4px 0;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      0 8px 22px rgb(0 113 227 / 0.32);
+    transition:
+      transform 0.18s var(--ease),
+      filter 0.2s var(--ease);
+  }
+  .sidebar-add:hover {
+    filter: brightness(1.08);
+  }
+  .sidebar-add:active {
+    transform: scale(0.97);
+    opacity: 1;
+  }
+  .local-private,
+  .demo-switch,
+  .sidebar-bottom > p {
+    font-size: 12px;
+  }
+  .local-private span {
+    font-size: 11px;
+  }
+  .demo-switch {
+    color: var(--blue);
+  }
+
+  /* Top bar: sticky glass on every width. */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    height: 60px;
+    padding: 0 32px;
+    border-bottom: 0;
+    border-radius: 0;
+    box-shadow:
+      inset 0 -1px 0 var(--hairline),
+      0 8px 24px rgb(0 0 0 / 0.03);
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .breadcrumb strong {
+    font-weight: 600;
+  }
+  .device-status {
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--hover);
+  }
+  button.device-status {
+    border: 0;
+    color: var(--muted);
+    cursor: pointer;
+    min-height: 32px;
+    transition: background 0.2s var(--ease);
+  }
+  button.device-status:hover {
+    background: var(--surface-soft);
+  }
+  .device-status.sync-ok {
+    color: var(--gain);
+  }
+  .device-status.sync-warn {
+    color: #a35200;
+  }
+  :root[data-theme='dark'] .device-status.sync-warn {
+    color: #ffb340;
+  }
+  .sync-grid {
+    margin: 16px 0;
+  }
+  .sync-grid strong {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .avatar {
+    background: linear-gradient(160deg, #3d9bff, #0058b9);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .main-content {
+    padding-top: 40px;
+  }
+
+  /* ---------- Content surfaces (solid, not glass) ---------- */
+  .panel,
+  .stat-card,
+  .account-card {
+    background: var(--surface);
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--card-shadow);
+  }
+  .panel {
+    padding: 26px 28px;
+  }
+  .panel-heading {
+    margin-bottom: 18px;
+  }
+  .panel-heading h2 {
+    font-size: 19px;
+  }
+  .welcome-strip {
+    border-radius: 18px;
+    border: 0;
+    background: var(--blue-soft);
+  }
+  .welcome-strip strong {
+    font-size: 15px;
+  }
+  .welcome-strip p {
+    font-size: 13px;
+  }
+  .welcome-icon,
+  .empty-icon {
+    border-radius: 14px;
+  }
+  .notice {
+    border-radius: 16px;
+  }
+
+  /* OKX-style number hierarchy: one dominant figure, tabular digits, quiet labels. */
+  .net-worth {
+    padding: 34px 36px;
+  }
+  .net-amount {
+    font-size: 54px;
+    font-weight: 650;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    margin: 10px 0 12px;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI Variable Display', 'Segoe UI',
+      'PingFang SC', 'Microsoft YaHei UI', sans-serif;
+  }
+  .label {
+    font-size: 14px;
+  }
+  .net-caption {
+    font-size: 12px;
+  }
+  .net-breakdown {
+    border-left-color: var(--hairline);
+  }
+  .net-breakdown span {
+    font-size: 13px;
+  }
+  .net-breakdown strong {
+    font-size: 20px;
+    font-weight: 620;
+    letter-spacing: -0.015em;
+  }
+  .stat-card > strong {
+    font-size: 30px;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+  }
+  .stat-label {
+    font-size: 13px;
+  }
+  .stat-bottom,
+  .stat-label small {
+    font-size: 12px;
+  }
+  .net-amount,
+  .account-value,
+  .stat-card > strong,
+  .holding-value strong,
+  .transaction-amount,
+  .chart-summary strong,
+  .detail-hero strong {
+    font-variant-numeric: tabular-nums;
+  }
+  .progress {
+    height: 6px;
+    border-radius: 999px;
+  }
+  .progress > span {
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  /* Segmented control: glass track with a raised thumb (iOS). */
+  .segmented {
+    padding: 4px;
+    gap: 2px;
+    border-radius: 999px;
+  }
+  .segmented button {
+    border-radius: 999px;
+    color: var(--muted);
+    font-weight: 560;
+    transition:
+      background 0.25s var(--ease),
+      color 0.2s var(--ease),
+      box-shadow 0.25s var(--ease);
+  }
+  .segmented button.selected {
+    background: var(--glass-thumb);
+    color: var(--text);
+    box-shadow: var(--glass-thumb-shadow);
+  }
+
+  /* Asset tabs: OKX text tabs — bold active label with a short rounded indicator. */
+  .asset-tabs {
+    border-bottom-color: var(--hairline);
+    gap: 28px;
+  }
+  .asset-tabs button {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 0;
+    position: relative;
+  }
+  .asset-tabs button.selected {
+    border-bottom: 0;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .asset-tabs button.selected::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -1px;
+    width: 18px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--text);
+    transform: translateX(-50%);
+  }
+
+  /* Lists: OKX asset rows — icon, two-line label, right-aligned figure. */
+  .holding-row,
+  .transaction-row {
+    border-bottom-color: var(--hairline);
+    border-radius: 0;
+    transition: background 0.2s var(--ease);
+  }
+  .holding-row:hover .holding-copy strong,
+  .transaction-row:hover .transaction-copy strong {
+    color: var(--blue);
+  }
+  .holding-copy strong,
+  .transaction-copy strong {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .holding-copy > span,
+  .holding-copy small,
+  .transaction-copy > span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .holding-value strong {
+    font-size: 16px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .holding-value small {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .category-icon,
+  .account-icon {
+    border-radius: 14px;
+  }
+  .account-card {
+    transition:
+      transform 0.25s var(--ease),
+      box-shadow 0.25s var(--ease);
+  }
+  .account-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      var(--card-shadow),
+      0 14px 34px rgb(0 0 0 / 0.08);
+  }
+  .account-value {
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+  .asset-totals span {
+    font-size: 13px;
+  }
+  .asset-totals strong {
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+  .asset-totals > div + div {
+    border-left-color: var(--hairline);
+  }
+  .detail-hero strong {
+    font-size: 40px;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+  .source-box,
+  .detail-grid > div {
+    border-radius: 16px;
+  }
+
+  /* Subscriptions: OKX-style tiles on desktop, plain rows on phones. */
+  .subscription-item {
+    border: 0;
+    border-radius: 18px;
+    background: var(--surface-soft);
+    transition:
+      background 0.2s var(--ease),
+      transform 0.2s var(--ease);
+  }
+  .subscription-item:hover {
+    background: var(--hover);
+  }
+  .subscription-item:active {
+    transform: scale(0.98);
+    opacity: 1;
+  }
+  .subscription-mark {
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
+  }
+  .subscription-copy strong {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .subscription-value strong {
+    font-size: 16px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  @media (max-width: 760px) {
+    .subscription-item {
+      background: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .subscription-item:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  /* Settings: card navigation, option tiles and an iOS switch. */
+  .settings-nav {
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--card-shadow);
+  }
+  .settings-nav button {
+    border-radius: 12px;
+    font-size: 14px;
+    transition: background 0.2s var(--ease);
+  }
+  .settings-nav button:hover {
+    background: var(--hover);
+  }
+  .settings-nav button.selected,
+  .settings-nav button.selected:hover {
+    background: var(--blue-soft);
+    color: var(--blue);
+    font-weight: 600;
+  }
+  .theme-options button {
+    border-radius: 16px;
+    border-color: var(--border);
+    transition:
+      border-color 0.2s var(--ease),
+      background 0.2s var(--ease);
+  }
+  .theme-options button.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--blue-soft);
+  }
+  .toggle {
+    width: 51px;
+    height: 31px;
+    border-radius: 999px;
+    padding: 2px;
+    transition: background 0.25s var(--ease);
+  }
+  .toggle span {
+    width: 27px;
+    height: 27px;
+    box-shadow:
+      0 3px 8px rgb(0 0 0 / 0.15),
+      0 1px 1px rgb(0 0 0 / 0.16);
+    transition: transform 0.25s var(--ease);
+  }
+  .toggle.on {
+    background: #34c759;
+  }
+  .toggle.on span {
+    transform: translateX(20px);
+  }
+
+  /* ---------- Overlays ---------- */
+  .modal {
+    background: var(--glass-sheen), var(--glass-strong);
+    border: 0;
+    border-radius: 28px;
+    padding: 24px 28px 28px;
+    animation: theme-modal-in 0.32s var(--ease);
+  }
+  .modal::backdrop {
+    background: rgb(0 0 0 / 0.32);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .modal-heading h2 {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  /* Fields inside glass sheets need a slightly more opaque fill to stay legible. */
+  .modal input,
+  .modal select,
+  .modal textarea {
+    background: color-mix(in srgb, var(--field) 82%, transparent);
+  }
+  .toast {
+    background: var(--glass-sheen), var(--glass-strong);
+    color: var(--text);
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-size: 14px;
+    left: calc(50% + 120px);
+  }
+  @keyframes theme-modal-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.98);
+    }
+  }
+  @keyframes theme-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  .app-footer {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ---------- Narrower desktops ---------- */
+  @media (max-width: 1200px) {
+    .stat-card > strong {
+      font-size: 26px;
+    }
+  }
+
+  /* ---------- Tablet ---------- */
+  @media (max-width: 1050px) and (min-width: 761px) {
+    .main-shell {
+      margin-left: 202px;
+    }
+    /* The 178px pane is too narrow for the slogan; the wordmark alone stays legible. */
+    .brand small {
+      display: none;
+    }
+    .toast {
+      left: calc(50% + 101px);
+    }
+    h1 {
+      font-size: 34px;
+    }
+    .net-amount {
+      font-size: 44px;
+    }
+    .stat-card > strong {
+      font-size: 21px;
+      letter-spacing: -0.02em;
+    }
+  }
+
+  /* ---------- Phone: OKX app layout ---------- */
+  @media (max-width: 760px) {
+    :root {
+      font-size: 16px;
+    }
+    .main-shell {
+      margin-left: 0;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+    .topbar {
+      height: calc(56px + env(safe-area-inset-top));
+      padding: env(safe-area-inset-top) 16px 0;
+    }
+    .mobile-wordmark {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .main-content {
+      padding: 22px 16px 16px;
+    }
+    h1,
+    .page-heading h1 {
+      font-size: 30px;
+      letter-spacing: -0.022em;
+    }
+    .eyebrow {
+      font-size: 13px;
+      letter-spacing: 0;
+      margin-bottom: 8px;
+    }
+    .page-heading p:last-child {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .page-heading > .button-group > .button,
+    .page-heading > .button {
+      font-size: 13px;
+      min-height: 40px;
+      padding: 9px 14px;
+    }
+    .panel {
+      padding: 20px 18px;
+      border-radius: 20px;
+    }
+    .net-worth {
+      padding: 24px 20px;
+    }
+    .net-amount {
+      font-size: 40px;
+    }
+    .stat-card > strong {
+      font-size: 24px;
+    }
+    .welcome-strip strong {
+      font-size: 14px;
+    }
+    .welcome-strip p {
+      font-size: 12px;
+    }
+    .asset-tabs {
+      gap: 22px;
+    }
+    .asset-tabs button {
+      font-size: 15px;
+    }
+    .holding-copy strong,
+    .transaction-copy strong {
+      font-size: 15px;
+    }
+    .holding-copy > span,
+    .transaction-copy > span {
+      font-size: 12px;
+    }
+
+    /* Floating glass tab bar (iOS 26-style capsule). */
+    .bottom-nav {
+      inset: auto 12px calc(10px + env(safe-area-inset-bottom));
+      min-height: 64px;
+      padding: 6px;
+      gap: 4px;
+      border: 0;
+      border-radius: 32px;
+    }
+    .bottom-nav button {
+      flex: 1;
+      min-height: 52px;
+      gap: 3px;
+      border-radius: 26px;
+      font-size: 11px;
+      font-weight: 560;
+      color: var(--muted);
+      transition:
+        background 0.25s var(--ease),
+        color 0.2s var(--ease);
+    }
+    .bottom-nav button.selected {
+      background: var(--glass-thumb);
+      box-shadow: var(--glass-thumb-shadow);
+      color: var(--blue);
+      font-weight: 650;
+    }
+    .toast {
+      left: 50%;
+      bottom: calc(88px + env(safe-area-inset-bottom));
+      font-size: 13px;
+      padding: 11px 16px;
+    }
+
+    /* Dialogs become bottom sheets. */
+    .modal,
+    .modal.wide {
+      width: 100%;
+      max-width: 100%;
+      margin: auto 0 0;
+      border-radius: 28px 28px 0 0;
+      padding: 10px 18px calc(24px + env(safe-area-inset-bottom));
+      max-height: calc(100dvh - 24px - env(safe-area-inset-top));
+      animation: theme-sheet-in 0.36s var(--ease);
+    }
+    .modal::before {
+      content: '';
+      display: block;
+      width: 38px;
+      height: 5px;
+      border-radius: 3px;
+      background: var(--border);
+      margin: 0 auto 12px;
+    }
+    .modal-heading h2 {
+      font-size: 19px;
+    }
+  }
+
+  /* ---------- Accessibility fallbacks ---------- */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sidebar,
+    .topbar,
+    .bottom-nav,
+    .segmented,
+    .toast {
+      background: var(--surface);
+    }
+    .modal {
+      background: var(--surface);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .sidebar,
+    .topbar,
+    .bottom-nav,
+    .segmented,
+    .modal,
+    .toast {
+      background: var(--surface);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+    body {
+      background: var(--bg);
+    }
+  }
+  @media (prefers-contrast: more) {
+    :root {
+      --muted: #4a4a4f;
+      --glass: var(--surface);
+      --glass-strong: var(--surface);
+    }
+    :root[data-theme='dark'] {
+      --muted: #c7c7cc;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .button:active:not(:disabled),
+    .icon-button:active:not(:disabled),
+    .sidebar-add:active,
+    .account-card:hover {
+      transform: none;
+    }
+  }
+  @media print {
+    body {
+      background: #fff;
+    }
+    .panel,
+    .stat-card,
+    .account-card {
+      box-shadow: none;
+      border: 1px solid #ddd;
+    }
+  }
+}
