@@ -13,13 +13,14 @@
     "start": "tsx server/index.ts",
     "start:private": "tsx scripts/start-private.ts",
     "forget:okx": "tsx scripts/forget-okx.ts",
-    "autostart:on": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/autostart.ps1",
-    "autostart:off": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/autostart.ps1 -Remove",
+    "autostart:on": "tsx scripts/autostart.ts on",
+    "autostart:off": "tsx scripts/autostart.ts off",
     "diagnose:okx": "tsx scripts/diagnose-okx.ts",
     "diagnose:okx:private": "tsx scripts/diagnose-okx.ts --private",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "check": "tsc -b",
+    "i18n:check": "node scripts/i18n-check.mjs",
     "format": "prettier --write src server tests scripts/build-sw.mjs *.ts *.json README.md docs/*.md"
   },
   "dependencies": {

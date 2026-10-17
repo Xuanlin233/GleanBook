@@ -1,0 +1,56 @@
+name: 问题报告 / Bug report
+description: 某个功能不正常 / Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **请勿粘贴任何密钥、访问口令、账本内容或 `.env` 文件。** 截图前请切换到“演示账本”，或遮挡金额。
+        **Never paste API keys, passwords, ledger data or your `.env`.** Use the demo ledger for screenshots.
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么 / What happened
+      description: 实际看到的现象，以及你期望的结果 / What you saw and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+      placeholder: |
+        1. 打开 …
+        2. 点击 …
+        3. 看到 …
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: 在哪里使用 / Where
+      multiple: true
+      options:
+        - 电脑浏览器 / Desktop browser
+        - iPhone 主屏幕 App / iPhone home-screen app
+        - Android
+        - Docker / 服务器部署 / Self-hosted server
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / Version
+      description: 设置页底部显示的版本号，或 git 提交 / Shown at the bottom of Settings, or the git commit
+  - type: input
+    id: env
+    attributes:
+      label: 系统与 Node 版本 / OS and Node version
+      placeholder: Windows 11, Node 24.x, Chrome 141
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 终端输出或页面提示 / Terminal output or error message
+      description: 发送前请再检查一遍，确认没有密钥或真实金额 / Check again for secrets or real amounts before posting
+      render: text

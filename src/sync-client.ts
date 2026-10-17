@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { validateLedger, type Ledger } from './domain';
 import type { Rejected, SyncOp } from './sync-core';
+import { tr } from './i18n';
 
 export type SyncStatus =
   | { kind: 'local' } // demo ledger or a backend without the sync endpoint
@@ -44,7 +45,7 @@ export async function postSync(revision: number | null, ops: SyncOp[]): Promise<
   const raw = await res.json().catch(() => null);
   if (!res.ok)
     throw new Error(
-      raw && typeof raw.error === 'string' ? raw.error.slice(0, 200) : '电脑主库暂时无法同步',
+      raw && typeof raw.error === 'string' ? raw.error.slice(0, 200) : tr('电脑主库暂时无法同步'),
     );
   const data = responseSchema.parse(raw);
   return {

@@ -1,8 +1,13 @@
 # 拾账 Gleanbook
 
+[![CI](https://github.com/Xuanlin233/gleanbook/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuanlin233/gleanbook/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+
+简体中文 | [English](README.en.md)
+
 **私有、离线优先的个人记账与资产管理网站。** 账本主库保存在你自己的电脑上，不依赖任何云服务；电脑浏览器与 iPhone 主屏幕 App 看到的是同一本账，离线也能记，连上后自动合并。
 
-_A private, offline-first personal finance and portfolio tracker. Your ledger lives on your own computer; phone and desktop stay in sync over your private Tailscale network. Chinese UI._
+_A private, offline-first personal finance and portfolio tracker. Your ledger lives on your own computer; phone and desktop stay in sync over your private Tailscale network. Chinese and English UI._
 
 > 本项目不构成任何投资建议。基金净值、行情与汇率来自公开接口，不保证准确、及时或长期可用；请以基金公司、交易所与银行的正式数据为准。
 
@@ -23,21 +28,24 @@ _截图均为内置演示账本的虚构数据。_
 - **总览**：净资产、月度收支、资产分布，净资产趋势（今日分时 / 7 / 30 / 90 天 / 自定义范围）。
 - **多设备同步**：电脑主库 + 各设备离线副本，记录级合并（以后修改为准、删除优先、非法修改拒绝并说明原因），主库每日自动备份。
 - **PWA**：可添加到 iPhone 主屏幕、离线使用；浅色 / 深色；Apple 风格排版与液态玻璃导航。
-- **隐私**：无广告、无统计脚本、无第三方字体；OKX 密钥必须是只读权限，在 Windows 上用 DPAPI 加密保存，仅当前用户可解密。
+- **隐私**：无广告、无统计脚本、无第三方字体；OKX 密钥必须是只读权限，用系统自带的密钥存储加密保存（Windows DPAPI / macOS 钥匙串 / Linux Secret Service），仅当前用户可读取。
+- **中英双语**：按浏览器语言自动选择，可在 设置 → 偏好与隐私 切换。
 
-## 快速开始（Windows）
+## 一分钟体验
 
-需要 [Node.js 24](https://nodejs.org/) 或以上。
+不需要任何密钥或账号。装好 [Node.js 24](https://nodejs.org/) 或以上后：
 
-```powershell
-git clone <仓库地址> gleanbook
+```bash
+git clone https://github.com/Xuanlin233/gleanbook.git
 cd gleanbook
 npm ci
 npm run build
 npm start
 ```
 
-浏览器打开 <http://localhost:8787>。`npm start` 不需要任何密钥：记账、基金净值、行情、定投、订阅都能用；可在侧栏“体验演示账本”查看示例数据。
+浏览器打开 <http://localhost:8787/?demo>，直接进入**演示账本**（虚构数据），所有页面都能点。演示账本与真实账本完全分开，去掉 `?demo` 或点侧栏“返回真实账本”即可开始记自己的账。
+
+Windows、macOS、Linux 都可以运行。`npm start` 已包含记账、基金净值、行情、定投、订阅；只有 OKX 持仓和多设备同步需要下面的 `start:private`。
 
 ### 连接 OKX 只读持仓与多设备同步
 
@@ -45,7 +53,9 @@ npm start
 npm run start:private
 ```
 
-首次运行按提示输入 OKX **仅 Read 权限**的 API Key、Secret、Passphrase，以及你自己设置的网站访问口令（至少 32 字符）。验证通过后凭证加密保存，以后启动不再需要输入；`npm run forget:okx` 可清除。
+首次运行按提示输入 OKX **仅 Read 权限**的 API Key、Secret、Passphrase，以及你自己设置的网站访问口令（至少 32 字符）。验证通过后凭证加密保存在系统密钥存储中（Windows DPAPI、macOS 钥匙串、Linux 需安装 `secret-tool`），以后启动不再需要输入；`npm run forget:okx` 可清除。
+
+开机自动启动：先手动运行一次 `npm run start:private` 保存凭证，再运行 `npm run autostart:on`（Windows 启动文件夹 / macOS LaunchAgent / Linux systemd 用户服务），`npm run autostart:off` 关闭。
 
 - OKX 账号不在全球站：在 `.env` 设置 `OKX_API_ORIGIN`（美国 / 澳大利亚 `https://us.okx.com`，欧洲经济区 `https://eea.okx.com`）。
 - 后端连不上 OKX（常见于需要代理的网络）：运行 `npm run diagnose:okx`，按提示在 `.env` 设置 `OKX_PROXY`，或开启代理软件的 TUN 模式。带密钥逐个检测接口：`npm run diagnose:okx:private`（只显示状态与耗时）。
@@ -80,6 +90,7 @@ npm run start:private
 ```powershell
 npm run dev        # Vite 开发服务器（另开终端 npm run server 提供 /api）
 npm run check      # TypeScript 类型检查
+npm run i18n:check # 检查界面文字是否都有翻译
 npm test           # 单元测试（Vitest）
 npm run test:e2e   # 浏览器测试（Playwright，默认使用本机 Chrome）
 npm run format     # Prettier
@@ -87,13 +98,14 @@ npm run format     # Prettier
 
 ```text
 src/            React 前端：domain.ts（Decimal 记账规则与校验）、plans.ts（定投）、
-                subscriptions.ts（订阅）、sync-core.ts（同步合并）、theme.css（视觉主题）
+                subscriptions.ts（订阅）、sync-core.ts（同步合并）、theme.css（视觉主题）、
+                i18n.ts 与 locales/（界面语言）
 server/         Node 后端：同源静态服务、鉴权、OKX 只读、基金净值、汇率、节假日、电脑主库
 scripts/        启动器、诊断、凭证加密保存、构建 Service Worker
 tests/          单元测试与浏览器测试
 ```
 
-欢迎贡献，请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
+欢迎贡献，请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，想做点什么可以看 [ROADMAP.md](ROADMAP.md)；安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。版本变化见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 许可证
 

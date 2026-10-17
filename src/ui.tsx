@@ -50,6 +50,7 @@ import {
   ChartDonut,
   FolderOpen,
 } from '@phosphor-icons/react';
+import { tr } from './i18n';
 const icons = {
   book: BookOpenText,
   overview: SquaresFour,
@@ -286,7 +287,7 @@ export function Modal({
     >
       <div className="modal-heading">
         <h2>{title}</h2>
-        <IconButton name="close" label="关闭弹窗" onClick={onClose} />
+        <IconButton name="close" label={tr('关闭弹窗')} onClick={onClose} />
       </div>
       {children}
     </dialog>
@@ -329,13 +330,15 @@ export function DownloadLink({
 }
 export function humanError(e: unknown): string {
   if (e instanceof Error) {
-    if (e.name === 'ZodError') return '数据字段不符合要求，请检查金额、日期和必填项。';
-    if (e.name === 'TimeoutError') return '请求超时，已保留原有数据。';
+    if (e.name === 'ZodError') return tr('数据字段不符合要求，请检查金额、日期和必填项。');
+    if (e.name === 'TimeoutError') return tr('请求超时，已保留原有数据。');
     // fetch() rejects with a bare TypeError when nothing answers. The page itself may still
     // load from the offline cache, so say plainly that the backend is not running.
     if (e.name === 'TypeError' && /fetch|NetworkError|Load failed/i.test(e.message))
-      return '连接不到网站后端：后端没有运行或已经退出（当前页面来自浏览器离线缓存）。请查看启动网站的终端，重新运行 npm start 或 npm run start:private。';
+      return tr(
+        '连接不到网站后端：后端没有运行或已经退出（当前页面来自浏览器离线缓存）。请查看启动网站的终端，重新运行 npm start 或 npm run start:private。',
+      );
     return e.message;
   }
-  return '操作失败，请重试';
+  return tr('操作失败，请重试');
 }

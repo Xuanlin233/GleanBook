@@ -1,0 +1,32 @@
+name: 数据源接入 / Data source
+description: 新的交易所、券商、行情或汇率来源 / A new exchange, broker, price or exchange-rate source
+labels: [data-source, enhancement]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: 数据源 / Source
+      placeholder: 例如 Binance 现货只读 API / e.g. Binance spot read-only API
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: 需要的数据 / Data needed
+      description: 行情、余额、持仓、净值、汇率……以及刷新频率 / Prices, balances, positions, NAV, FX … and how often
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: 官方接口文档 / Official API docs
+      description: 是否免费、是否需要密钥、调用频率限制 / Free or paid, key required, rate limits
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: 接入要求 / Requirements
+      options:
+        - label: 只读，不需要交易或提币权限 / Read-only; no trading or withdrawal permission
+          required: true
+        - label: 失败时保留旧数据，不阻塞记账 / On failure keep old data and never block bookkeeping
+          required: true

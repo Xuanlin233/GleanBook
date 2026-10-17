@@ -27,6 +27,7 @@ import { ConnectionSettings } from './sync';
 import { SyncPanel } from './sync-ui';
 import type { SyncState } from './storage';
 import type { SyncStatus } from './sync-client';
+import { language, languages, setLanguage, tr, type Language } from './i18n';
 export function Settings({
   ledger: l,
   onSave,
@@ -62,30 +63,30 @@ export function Settings({
     if (jumpToConnect) setTab('connect');
   }, [jumpToConnect]);
   const tabs = [
-    ['general', 'sliders', '偏好与隐私'],
-    ['accounts', 'wallet', '账户与分类'],
-    ['budget', 'donut', '月度预算'],
-    ['rates', 'globe', '汇率与统计'],
-    ['connect', 'lock', '数据连接'],
-    ['backup', 'shield', '备份与恢复'],
-    ['install', 'phone', '安装与说明'],
+    ['general', 'sliders', tr('偏好与隐私')],
+    ['accounts', 'wallet', tr('账户与分类')],
+    ['budget', 'donut', tr('月度预算')],
+    ['rates', 'globe', tr('汇率与统计')],
+    ['connect', 'lock', tr('数据连接')],
+    ['backup', 'shield', tr('备份与恢复')],
+    ['install', 'phone', tr('安装与说明')],
   ];
   const safe = (update: (l: Ledger) => Ledger) =>
     onSave(update)
-      .then(() => notify('已保存设置'))
+      .then(() => notify(tr('已保存设置')))
       .catch((e) => notify(humanError(e)));
   return (
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">按你的方式，打理你的财务</p>
-          <h1>设置</h1>
-          <p>让工具安静地适应你。</p>
+          <p className="eyebrow">{tr('按你的方式，打理你的财务')}</p>
+          <h1>{tr('设置')}</h1>
+          <p>{tr('让工具安静地适应你。')}</p>
         </div>
-        <span className="version-badge">拾账 Gleanbook v0.1.0</span>
+        <span className="version-badge">{tr('拾账 Gleanbook v0.1.0')}</span>
       </div>
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label="设置分类">
+        <nav className="settings-nav" aria-label={tr('设置分类')}>
           {tabs.map(([id, icon, name]) => (
             <button key={id} onClick={() => setTab(id)} className={tab === id ? 'selected' : ''}>
               <Icon name={icon === 'sliders' ? 'settings' : icon} />
@@ -97,13 +98,15 @@ export function Settings({
         <div className="settings-content">
           {tab === 'general' && (
             <>
-              <Panel title="外观">
-                <div className="setting-description">简单、清晰，在每一块屏幕上都舒适。</div>
+              <Panel title={tr('外观')}>
+                <div className="setting-description">
+                  {tr('简单、清晰，在每一块屏幕上都舒适。')}
+                </div>
                 <div className="theme-options">
                   {[
-                    ['system', 'desktop', '跟随系统'],
-                    ['light', 'sun', '浅色'],
-                    ['dark', 'moon', '深色'],
+                    ['system', 'desktop', tr('跟随系统')],
+                    ['light', 'sun', tr('浅色')],
+                    ['dark', 'moon', tr('深色')],
                   ].map(([v, icon, name]) => (
                     <button
                       key={v}
@@ -123,11 +126,11 @@ export function Settings({
                 </div>
                 <div className="setting-row">
                   <div>
-                    <strong>涨跌颜色</strong>
-                    <p>始终保留正负号，颜色作为辅助。</p>
+                    <strong>{tr('涨跌颜色')}</strong>
+                    <p>{tr('始终保留正负号，颜色作为辅助。')}</p>
                   </div>
                   <select
-                    aria-label="涨跌颜色"
+                    aria-label={tr('涨跌颜色')}
                     value={l.settings.gainColor}
                     onChange={(e) =>
                       safe((s) => ({
@@ -136,21 +139,41 @@ export function Settings({
                       }))
                     }
                   >
-                    <option value="green">绿涨红跌</option>
-                    <option value="red">红涨绿跌</option>
+                    <option value="green">{tr('绿涨红跌')}</option>
+                    <option value="red">{tr('红涨绿跌')}</option>
+                  </select>
+                </div>
+                <div className="setting-row">
+                  <div>
+                    <strong>
+                      {tr('界面语言')}
+                      {language === 'en' ? '' : ' · Language'}
+                    </strong>
+                    <p>{tr('只影响这台设备，切换后页面会重新加载。')}</p>
+                  </div>
+                  <select
+                    aria-label={tr('界面语言')}
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as Language)}
+                  >
+                    {Object.entries(languages).map(([v, name]) => (
+                      <option key={v} value={v}>
+                        {name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </Panel>
-              <Panel title="金额隐私">
+              <Panel title={tr('金额隐私')}>
                 <div className="setting-row">
                   <div>
-                    <strong>隐藏金额</strong>
-                    <p>总览、账单与资产列表统一隐藏；编辑表单保留输入值。</p>
+                    <strong>{tr('隐藏金额')}</strong>
+                    <p>{tr('总览、账单与资产列表统一隐藏；编辑表单保留输入值。')}</p>
                   </div>
                   <button
                     role="switch"
                     aria-checked={l.settings.hideAmounts}
-                    aria-label="隐藏金额"
+                    aria-label={tr('隐藏金额')}
                     className={`toggle ${l.settings.hideAmounts ? 'on' : ''}`}
                     onClick={() =>
                       safe((s) => ({
@@ -163,15 +186,17 @@ export function Settings({
                   </button>
                 </div>
                 <Notice>
-                  账本仅保存在当前设备、当前浏览器。没有云同步和应用登录锁；可访问此浏览器配置的使用者也可访问账本，请使用设备锁并定期导出备份。
+                  {tr(
+                    '账本仅保存在当前设备、当前浏览器。没有云同步和应用登录锁；可访问此浏览器配置的使用者也可访问账本，请使用设备锁并定期导出备份。',
+                  )}
                 </Notice>
               </Panel>
-              <Panel title="体验演示">
+              <Panel title={tr('体验演示')}>
                 <div className="setting-description">
-                  演示账本和真实账本使用独立存储。演示行情是虚构数据，不表示接口连接成功。
+                  {tr('演示账本和真实账本使用独立存储。演示行情是虚构数据，不表示接口连接成功。')}
                 </div>
                 <Button onClick={() => setMode(mode === 'real' ? 'demo' : 'real')}>
-                  {mode === 'real' ? '打开独立演示账本' : '返回我的真实账本'}
+                  {mode === 'real' ? tr('打开独立演示账本') : tr('返回我的真实账本')}
                   <Icon name="arrow" />
                 </Button>
               </Panel>
@@ -180,29 +205,29 @@ export function Settings({
           {tab === 'accounts' && (
             <>
               <Panel
-                title="账户管理"
+                title={tr('账户管理')}
                 aside={
                   <Button variant="text" onClick={onAccount}>
                     <Icon name="plus" size={17} />
-                    添加账户
+                    {tr('添加账户')}
                   </Button>
                 }
               >
                 <p className="setting-description">
-                  在资产页打开账户，可查看余额、编辑期初余额或删除空账户。
+                  {tr('在资产页打开账户，可查看余额、编辑期初余额或删除空账户。')}
                 </p>
                 {l.accounts.map((a) => (
                   <div className="setting-row" key={a.id}>
                     <div>
                       <strong>{a.name}</strong>
                       <p>
-                        {a.currency} · {a.source === 'manual' ? '手动账本' : '外部快照'}
+                        {a.currency} · {a.source === 'manual' ? tr('手动账本') : tr('外部快照')}
                       </p>
                     </div>
                   </div>
                 ))}
                 <Button onClick={() => onNavigate('assets')}>
-                  查看与管理账户
+                  {tr('查看与管理账户')}
                   <Icon name="arrow" />
                 </Button>
               </Panel>
@@ -226,10 +251,11 @@ export function Settings({
           {tab === 'backup' && (
             <>
               <BackupSettings ledger={l} onSave={onSave} notify={notify} mode={mode} />
-              <Panel title="设备保存">
+              <Panel title={tr('设备保存')}>
                 <Notice tone="warning">
-                  浏览器数据可能因清理、存储回收或设备损坏而丢失。本地存储不是永久备份。请将 JSON
-                  备份保存在其他设备或可信存储中；备份包含财务隐私，未加密。
+                  {tr(
+                    '浏览器数据可能因清理、存储回收或设备损坏而丢失。本地存储不是永久备份。请将 JSON 备份保存在其他设备或可信存储中；备份包含财务隐私，未加密。',
+                  )}
                 </Notice>
                 <div className="button-group wrap">
                   <Button
@@ -237,18 +263,18 @@ export function Settings({
                       try {
                         notify(
                           (await requestPersistence())
-                            ? '浏览器已允许持久存储，仍请定期备份'
-                            : '浏览器未授予持久存储，请定期备份',
+                            ? tr('浏览器已允许持久存储，仍请定期备份')
+                            : tr('浏览器未授予持久存储，请定期备份'),
                         );
                       } catch (e) {
                         notify(humanError(e));
                       }
                     }}
                   >
-                    申请持久存储
+                    {tr('申请持久存储')}
                   </Button>
                   <Button variant="danger" onClick={onClear}>
-                    清空当前{mode === 'demo' ? '演示' : '真实'}账本
+                    {mode === 'demo' ? tr('清空当前演示账本') : tr('清空当前真实账本')}
                   </Button>
                 </div>
               </Panel>
@@ -256,68 +282,81 @@ export function Settings({
           )}
           {tab === 'install' && (
             <>
-              <Panel title="添加到主屏幕">
+              <Panel title={tr('添加到主屏幕')}>
                 <div className="install-art">
                   <div className="app-icon">
                     <Icon name="book" size={42} />
                   </div>
-                  <strong>拾账</strong>
-                  <span>像 App 一样，随手打开。</span>
+                  <strong>{tr('拾账')}</strong>
+                  <span>{tr('像 App 一样，随手打开。')}</span>
                 </div>
                 <ol className="steps">
                   <li>
                     <strong>iPhone / iPad</strong>
                     <p>
-                      用 Safari 打开 HTTPS 地址，点击“分享”，再选“添加到主屏幕”。如有“作为网页 App
-                      打开”，请开启。
+                      {tr(
+                        '用 Safari 打开 HTTPS 地址，点击“分享”，再选“添加到主屏幕”。如有“作为网页 App 打开”，请开启。',
+                      )}
                     </p>
                   </li>
                   <li>
                     <strong>Windows</strong>
-                    <p>在 Edge 或 Chrome 地址栏中选择安装应用；也可以直接在浏览器使用。</p>
+                    <p>{tr('在 Edge 或 Chrome 地址栏中选择安装应用；也可以直接在浏览器使用。')}</p>
                   </li>
                   <li>
-                    <strong>离线使用</strong>
-                    <p>首次联网打开生产构建并完成缓存后，可离线记账。重新联网不等于已云同步。</p>
+                    <strong>{tr('离线使用')}</strong>
+                    <p>
+                      {tr('首次联网打开生产构建并完成缓存后，可离线记账。重新联网不等于已云同步。')}
+                    </p>
                   </li>
                 </ol>
                 <Notice>
-                  HTTP 局域网地址通常无法启用 Service Worker；手机测试请部署 HTTPS。无需 IPA
-                  签名或苹果开发者付费账号。
+                  {tr(
+                    'HTTP 局域网地址通常无法启用 Service Worker；手机测试请部署 HTTPS。无需 IPA 签名或苹果开发者付费账号。',
+                  )}
                 </Notice>
               </Panel>
-              <Panel title="当前实现范围">
+              <Panel title={tr('当前实现范围')}>
                 <div className="feature-list">
                   <div>
                     <Icon name="check" />
-                    <span>本地账本、预算、JSON 备份恢复、CSV 导出、离线 PWA</span>
+                    <span>{tr('本地账本、预算、JSON 备份恢复、CSV 导出、离线 PWA')}</span>
                   </div>
                   <div>
                     <Icon name="check" />
-                    <span>手动投资持仓、申赎分红与份额调整、公共现货行情</span>
+                    <span>{tr('手动投资持仓、申赎分红与份额调整、公共现货行情')}</span>
                   </div>
                   <div>
                     <Icon name="info" />
                     <span>
-                      基金正式净值：任意 6 位代码公募基金免费自动获取（官网 / 东方财富 /
-                      新浪）；货币基金手动维护
+                      {tr(
+                        '基金正式净值：任意 6 位代码公募基金免费自动获取（官网 / 东方财富 / 新浪）；货币基金手动维护',
+                      )}
                     </span>
                   </div>
                   <div>
                     <Icon name="info" />
                     <span>
-                      OKX：可选只读后端，需部署、配置凭证并实盘核对；历史交易和收益导入未实现
+                      {tr(
+                        'OKX：可选只读后端，需部署、配置凭证并实盘核对；历史交易和收益导入未实现',
+                      )}
                     </span>
                   </div>
                   <div>
                     <Icon name="info" />
-                    <span>后端每日快照、云端账本与跨设备同步：未实现</span>
+                    <span>
+                      {tr(
+                        '多设备同步：以电脑为主库，经 Tailscale 私有网络；云端账本与后台定时快照：未实现',
+                      )}
+                    </span>
                   </div>
                 </div>
               </Panel>
-              <Panel title="记账口径">
+              <Panel title={tr('记账口径')}>
                 <div className="setting-description long-copy">
-                  期初余额不算收入；转账本金与信用卡还款不算消费，转账手续费单列支出。退款关联原支出并在退款发生月冲减原分类。投资申赎与现金分红不计生活收支，交易手续费进入投资成本或减少卖出净额。移动加权平均成本计算已实现和未实现收益，缺少成本则收益不可计算。份额调整保持总成本不变，适合拆分、合并或更正份额。新增本金、充值、提现不作为投资收益。历史快照是当时观测值，修改历史记录只重算当前余额与对应月份统计，不回写过去观测的市场估值。
+                  {tr(
+                    '期初余额不算收入；转账本金与信用卡还款不算消费，转账手续费单列支出。退款关联原支出并在退款发生月冲减原分类。投资申赎与现金分红不计生活收支，交易手续费进入投资成本或减少卖出净额。移动加权平均成本计算已实现和未实现收益，缺少成本则收益不可计算。份额调整保持总成本不变，适合拆分、合并或更正份额。新增本金、充值、提现不作为投资收益。历史快照是当时观测值，修改历史记录只重算当前余额与对应月份统计，不回写过去观测的市场估值。',
+                  )}
                 </div>
               </Panel>
             </>
@@ -341,7 +380,7 @@ function CategoryManager({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit
     }
   };
   return (
-    <Panel title="收支分类">
+    <Panel title={tr('收支分类')}>
       <div className="category-manager">
         {l.categories.map((c) => (
           <div key={c.id}>
@@ -350,7 +389,7 @@ function CategoryManager({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit
             </span>
             <span>
               {c.name}
-              <small>{c.kind === 'expense' ? '支出' : '收入'}</small>
+              <small>{c.kind === 'expense' ? tr('支出') : tr('收入')}</small>
             </span>
             <Button
               variant="text"
@@ -360,18 +399,18 @@ function CategoryManager({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit
                 setKind(c.kind);
               }}
             >
-              改名
+              {tr('改名')}
             </Button>
             <button
               className="icon-button"
-              aria-label={`删除${c.name}分类`}
+              aria-label={tr('删除{name}分类', { name: c.name })}
               onClick={() =>
                 execute((s) => {
                   if (
                     s.transactions.some((t) => t.categoryId === c.id) ||
                     s.budgets.some((b) => b.categoryId === c.id)
                   )
-                    throw new Error('分类已有账单或预算引用，请先调整相关记录');
+                    throw new Error(tr('分类已有账单或预算引用，请先调整相关记录'));
                   return { ...s, categories: s.categories.filter((x) => x.id !== c.id) };
                 })
               }
@@ -386,12 +425,12 @@ function CategoryManager({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit
         onSubmit={async (e) => {
           e.preventDefault();
           try {
-            if (!name.trim()) throw new Error('请输入分类名称');
+            if (!name.trim()) throw new Error(tr('请输入分类名称'));
             await onSave((s) => {
               if (
                 s.categories.some((c) => c.id !== edit && c.kind === kind && c.name === name.trim())
               )
-                throw new Error('同类型下已有此分类');
+                throw new Error(tr('同类型下已有此分类'));
               return {
                 ...s,
                 categories: edit
@@ -407,20 +446,20 @@ function CategoryManager({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit
           }
         }}
       >
-        <Field label={edit ? '修改分类名称' : '新分类名称'}>
+        <Field label={edit ? tr('修改分类名称') : tr('新分类名称')}>
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} required />
         </Field>
-        <Field label="类型">
+        <Field label={tr('类型')}>
           <select
             value={kind}
             disabled={!!edit}
             onChange={(e) => setKind(e.target.value as 'income' | 'expense')}
           >
-            <option value="expense">支出</option>
-            <option value="income">收入</option>
+            <option value="expense">{tr('支出')}</option>
+            <option value="income">{tr('收入')}</option>
           </select>
         </Field>
-        <Button type="submit">{edit ? '保存改名' : '添加分类'}</Button>
+        <Button type="submit">{edit ? tr('保存改名') : tr('添加分类')}</Button>
         {edit && (
           <Button
             variant="text"
@@ -429,7 +468,7 @@ function CategoryManager({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit
               setName('');
             }}
           >
-            取消
+            {tr('取消')}
           </Button>
         )}
       </form>
@@ -450,7 +489,7 @@ function BudgetSettings({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit 
     [saved, setSaved] = useState(false);
   const usage = monthly(l, month);
   return (
-    <Panel title="每月预算">
+    <Panel title={tr('每月预算')}>
       <form
         className="form"
         onSubmit={async (e) => {
@@ -476,7 +515,7 @@ function BudgetSettings({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit 
           }
         }}
       >
-        <Field label="预算月份">
+        <Field label={tr('预算月份')}>
           <input
             type="month"
             value={month}
@@ -496,8 +535,8 @@ function BudgetSettings({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit 
           />
         </Field>
         <Field
-          label="月度总预算（人民币）"
-          hint="留空表示未设置，0 表示不计划消费。每个月独立设置。"
+          label={tr('月度总预算（人民币）')}
+          hint={tr('留空表示未设置，0 表示不计划消费。每个月独立设置。')}
         >
           <input
             inputMode="decimal"
@@ -506,18 +545,31 @@ function BudgetSettings({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit 
               setValues({ ...values, total: e.target.value });
               setSaved(false);
             }}
-            placeholder="例如 6000"
+            placeholder={tr('例如 6000')}
           />
         </Field>
-        <h3>分类预算（可选）</h3>
+        <h3>{tr('分类预算（可选）')}</h3>
         <div className="form-grid">
           {l.categories
             .filter((c) => c.kind === 'expense')
             .map((c) => (
               <Field
-                label={c.name + '（CNY）'}
+                label={tr('{name}（CNY）', { name: c.name })}
                 key={c.id}
-                hint={`本月已用 ${money(usage.categories[c.id] ?? 0, l.settings.hideAmounts)}${l.budgets.some((b) => b.month === month && b.categoryId === c.id && D(b.amount).lt(usage.categories[c.id] ?? 0)) ? ' · 已超分类预算' : ''}`}
+                hint={
+                  l.budgets.some(
+                    (b) =>
+                      b.month === month &&
+                      b.categoryId === c.id &&
+                      D(b.amount).lt(usage.categories[c.id] ?? 0),
+                  )
+                    ? tr('本月已用 {money} · 已超分类预算', {
+                        money: money(usage.categories[c.id] ?? 0, l.settings.hideAmounts),
+                      })
+                    : tr('本月已用 {money}', {
+                        money: money(usage.categories[c.id] ?? 0, l.settings.hideAmounts),
+                      })
+                }
               >
                 <input
                   inputMode="decimal"
@@ -526,18 +578,18 @@ function BudgetSettings({ ledger: l, onSave }: { ledger: Ledger; onSave: Commit 
                     setValues({ ...values, [c.id]: e.target.value });
                     setSaved(false);
                   }}
-                  placeholder="未设置"
+                  placeholder={tr('未设置')}
                 />
               </Field>
             ))}
         </div>
         <Notice>
-          分类预算用于单项提醒，不与总预算相加。不同币种账单按发生时保存的人民币汇率统计。
+          {tr('分类预算用于单项提醒，不与总预算相加。不同币种账单按发生时保存的人民币汇率统计。')}
         </Notice>
         <ErrorText error={error} />
-        {saved && <Notice tone="success">本月预算已保存。</Notice>}
+        {saved && <Notice tone="success">{tr('本月预算已保存。')}</Notice>}
         <Button variant="primary" type="submit">
-          保存预算
+          {tr('保存预算')}
         </Button>
       </form>
     </Panel>
@@ -562,12 +614,11 @@ function RateSettings({
     [confirmTZ, setConfirmTZ] = useState(false);
   return (
     <>
-      <Panel title="人民币换算汇率">
+      <Panel title={tr('人民币换算汇率')}>
         <Notice>
-          账本用到的外币会自动补齐汇率：美元、欧元、港元取中国外汇交易中心人民币中间价，USDT = OKX
-          USDT-USD × 美元中间价，USDC = OKX USDC-USDT × USDT 汇率，不预设稳定币等于 1
-          美元。自动汇率每 30
-          分钟检查一次；你手动保存的汇率优先，不会被覆盖。历史收支保留记账时汇率。
+          {tr(
+            '账本用到的外币会自动补齐汇率：美元、欧元、港元取中国外汇交易中心人民币中间价，USDT = OKX USDT-USD × 美元中间价，USDC = OKX USDC-USDT × USDT 汇率，不预设稳定币等于 1 美元。自动汇率每 30 分钟检查一次；你手动保存的汇率优先，不会被覆盖。历史收支保留记账时汇率。',
+          )}
         </Notice>
         <div className="rates-list">
           {l.rates.length ? (
@@ -579,11 +630,11 @@ function RateSettings({
                   </strong>
                   <p>
                     {r.source} · {r.asOf.slice(0, 10)}
-                    {Date.now() - Date.parse(r.asOf) > 7 * 86400000 ? ' · 数据较旧' : ''}
+                    {Date.now() - Date.parse(r.asOf) > 7 * 86400000 ? tr(' · 数据较旧') : ''}
                   </p>
                 </div>
                 {r.auto ? (
-                  <span className="tiny-pill">自动</span>
+                  <span className="tiny-pill">{tr('自动')}</span>
                 ) : (
                   <Button
                     variant="text"
@@ -596,14 +647,14 @@ function RateSettings({
                         .catch((e) => setError(humanError(e)))
                     }
                   >
-                    手动 · 改用自动
+                    {tr('手动 · 改用自动')}
                   </Button>
                 )}
               </div>
             ))
           ) : (
             <p className="setting-description">
-              尚未添加汇率。人民币资产无需换算；其他币种未补齐时显示估值不完整。
+              {tr('尚未添加汇率。人民币资产无需换算；其他币种未补齐时显示估值不完整。')}
             </p>
           )}
         </div>
@@ -615,7 +666,7 @@ function RateSettings({
             setSaved(false);
             try {
               if (Date.parse(date) > Date.now() + 86400000)
-                throw new Error('汇率日期不能是未来日期');
+                throw new Error(tr('汇率日期不能是未来日期'));
               await onSave((s) => ({
                 ...s,
                 rates: [
@@ -635,7 +686,7 @@ function RateSettings({
           }}
         >
           <div className="form-grid">
-            <Field label="原币">
+            <Field label={tr('原币')}>
               <select
                 value={currency}
                 onChange={(e) => {
@@ -651,7 +702,7 @@ function RateSettings({
                 ))}
               </select>
             </Field>
-            <Field label="1 原币 = 多少人民币">
+            <Field label={tr('1 原币 = 多少人民币')}>
               <input
                 inputMode="decimal"
                 value={value}
@@ -659,28 +710,28 @@ function RateSettings({
                 required
               />
             </Field>
-            <Field label="数据日期">
+            <Field label={tr('数据日期')}>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
             </Field>
-            <Field label="汇率来源与口径">
+            <Field label={tr('汇率来源与口径')}>
               <input
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                placeholder="例如：银行现汇中间价 / 个人成交价"
+                placeholder={tr('例如：银行现汇中间价 / 个人成交价')}
                 maxLength={200}
                 required
               />
             </Field>
           </div>
           <ErrorText error={error} />
-          {saved && <Notice tone="success">汇率已保存，资产换算已更新。</Notice>}
+          {saved && <Notice tone="success">{tr('汇率已保存，资产换算已更新。')}</Notice>}
           <Button variant="primary" type="submit">
-            保存汇率
+            {tr('保存汇率')}
           </Button>
         </form>
       </Panel>
-      <Panel title="统计时区">
-        <Field label="日、月统计边界">
+      <Panel title={tr('统计时区')}>
+        <Field label={tr('日、月统计边界')}>
           <select
             value={tz}
             onChange={(e) => {
@@ -703,7 +754,9 @@ function RateSettings({
           </select>
         </Field>
         <p className="setting-description">
-          修改后，靠近午夜或月末的账单可能划入不同日期和月份。交易原始时间保持不变；旧时区的历史观测快照保留，趋势图只显示当前时区快照。
+          {tr(
+            '修改后，靠近午夜或月末的账单可能划入不同日期和月份。交易原始时间保持不变；旧时区的历史观测快照保留，趋势图只显示当前时区快照。',
+          )}
         </p>
         {tz !== l.settings.timezone && (
           <label className="checkbox-label">
@@ -712,7 +765,7 @@ function RateSettings({
               checked={confirmTZ}
               onChange={(e) => setConfirmTZ(e.target.checked)}
             />
-            我了解统计日期和月份可能发生变化
+            {tr('我了解统计日期和月份可能发生变化')}
           </label>
         )}
         <Button
@@ -726,7 +779,7 @@ function RateSettings({
             }
           }}
         >
-          更新统计时区
+          {tr('更新统计时区')}
         </Button>
       </Panel>
     </>
@@ -744,6 +797,7 @@ function BackupSettings({
   mode: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null),
+    restoreWord = tr('恢复'),
     [incoming, setIncoming] = useState<Ledger | null>(null),
     [error, setError] = useState(''),
     [restoreMode, setRestoreMode] = useState('merge'),
@@ -752,14 +806,15 @@ function BackupSettings({
   const merge = incoming ? mergeBackup(l, incoming) : null;
   return (
     <>
-      <Panel title="备份与导出">
+      <Panel title={tr('备份与导出')}>
         <p className="setting-description">
-          JSON 保存账户、账单、持仓、投资记录、预算、汇率和快照。CSV
-          仅导出日常账单，不能用于完整恢复。
+          {tr(
+            'JSON 保存账户、账单、持仓、投资记录、预算、汇率和快照。CSV 仅导出日常账单，不能用于完整恢复。',
+          )}
         </p>
         <div className="button-group wrap">
           <DownloadLink
-            label="完整 JSON 备份"
+            label={tr('完整 JSON 备份')}
             content={() =>
               JSON.stringify(
                 {
@@ -772,34 +827,39 @@ function BackupSettings({
                 2,
               )
             }
-            name={`拾账-${mode === 'demo' ? '演示-' : ''}${new Date().toISOString().slice(0, 10)}.json`}
+            name={
+              mode === 'demo'
+                ? tr('拾账-演示-{date}.json', { date: new Date().toISOString().slice(0, 10) })
+                : tr('拾账-{date}.json', { date: new Date().toISOString().slice(0, 10) })
+            }
             type="application/json"
           />
           <DownloadLink
-            label="导出账单 CSV"
+            label={tr('导出账单 CSV')}
             content={() => csvExport(l)}
-            name={`拾账-账单-${mode}.csv`}
+            name={tr('拾账-账单-{mode}.csv', { mode })}
             type="text/csv;charset=utf-8"
           />
         </div>
       </Panel>
-      <Panel title="恢复 JSON 备份">
+      <Panel title={tr('恢复 JSON 备份')}>
         <p className="setting-description">
-          先校验、预览，再执行恢复。合并按稳定 ID 去重，同 ID 内容冲突时停止合并；不同 ID
-          的相似消费保留，避免误删真实重复消费。
+          {tr(
+            '先校验、预览，再执行恢复。合并按稳定 ID 去重，同 ID 内容冲突时停止合并；不同 ID 的相似消费保留，避免误删真实重复消费。',
+          )}
         </p>
         <input
           ref={fileRef}
           type="file"
           accept="application/json,.json"
           className="visually-hidden"
-          aria-label="选择 JSON 备份"
+          aria-label={tr('选择 JSON 备份')}
           onChange={async (e) => {
             setError('');
             const file = e.target.files?.[0];
             if (!file) return;
             try {
-              if (file.size > 20 * 1024 * 1024) throw new Error('备份不能超过 20 MB');
+              if (file.size > 20 * 1024 * 1024) throw new Error(tr('备份不能超过 20 MB'));
               const data = parseBackup(await file.text());
               setIncoming(data);
               setRestoreMode('merge');
@@ -812,24 +872,25 @@ function BackupSettings({
         />
         <Button onClick={() => fileRef.current?.click()}>
           <Icon name="upload" />
-          选择备份文件
+          {tr('选择备份文件')}
         </Button>
         <ErrorText error={error} />
       </Panel>
       {incoming && (
-        <Modal title="导入前预览" onClose={() => setIncoming(null)}>
+        <Modal title={tr('导入前预览')} onClose={() => setIncoming(null)}>
           <div className="form">
             <Notice>
-              当前目标：{mode === 'real' ? '真实账本' : '独立演示账本'}
-              。现有数据只会在校验通过并确认后一次性写入。
+              {mode === 'real'
+                ? tr('当前目标：真实账本。现有数据只会在校验通过并确认后一次性写入。')
+                : tr('当前目标：独立演示账本。现有数据只会在校验通过并确认后一次性写入。')}
             </Notice>
             <div className="preview-counts">
               {[
-                ['账户', incoming.accounts.length],
-                ['账单', incoming.transactions.length],
-                ['持仓', incoming.holdings.length],
-                ['投资记录', incoming.investments.length],
-                ['历史快照', incoming.snapshots.length],
+                [tr('账户'), incoming.accounts.length],
+                [tr('账单'), incoming.transactions.length],
+                [tr('持仓'), incoming.holdings.length],
+                [tr('投资记录'), incoming.investments.length],
+                [tr('历史快照'), incoming.snapshots.length],
               ].map(([k, v]) => (
                 <div key={k}>
                   <span>{k}</span>
@@ -837,20 +898,25 @@ function BackupSettings({
                 </div>
               ))}
             </div>
-            <Field label="恢复方式">
+            <Field label={tr('恢复方式')}>
               <select value={restoreMode} onChange={(e) => setRestoreMode(e.target.value)}>
-                <option value="merge">合并，保留当前偏好</option>
-                <option value="replace">覆盖，恢复备份中的全部数据</option>
+                <option value="merge">{tr('合并，保留当前偏好')}</option>
+                <option value="replace">{tr('覆盖，恢复备份中的全部数据')}</option>
               </select>
             </Field>
             {restoreMode === 'merge' ? (
               <Notice tone={merge!.conflicts.length ? 'warning' : 'info'}>
                 {merge!.conflicts.length
-                  ? `发现 ${merge!.conflicts.length} 项内容冲突，无法自动合并。可取消，或确认覆盖。`
-                  : `新增 ${merge!.added} 项；跳过 ${merge!.skipped} 项重复数据。`}
+                  ? tr('发现 {count} 项内容冲突，无法自动合并。可取消，或确认覆盖。', {
+                      count: merge!.conflicts.length,
+                    })
+                  : tr('新增 {added} 项；跳过 {skipped} 项重复数据。', {
+                      added: merge!.added,
+                      skipped: merge!.skipped,
+                    })}
               </Notice>
             ) : (
-              <Field label="输入“恢复”以确认覆盖当前账本">
+              <Field label={tr('输入“{word}”以确认覆盖当前账本', { word: restoreWord })}>
                 <input
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
@@ -860,11 +926,12 @@ function BackupSettings({
             )}
             <ErrorText error={error} />
             <div className="form-actions">
-              <Button onClick={() => setIncoming(null)}>取消</Button>
+              <Button onClick={() => setIncoming(null)}>{tr('取消')}</Button>
               <Button
                 variant="primary"
                 disabled={
-                  busy || (restoreMode === 'merge' ? !!merge!.conflicts.length : confirm !== '恢复')
+                  busy ||
+                  (restoreMode === 'merge' ? !!merge!.conflicts.length : confirm !== restoreWord)
                 }
                 onClick={async () => {
                   setBusy(true);
@@ -875,11 +942,11 @@ function BackupSettings({
                         return { ...incoming, revision: current.revision };
                       const result = mergeBackup(current, incoming);
                       if (result.conflicts.length)
-                        throw new Error('当前数据发生变化，存在导入冲突');
+                        throw new Error(tr('当前数据发生变化，存在导入冲突'));
                       return result.ledger;
                     });
                     setIncoming(null);
-                    notify('恢复完成，数据已完整写入当前设备');
+                    notify(tr('恢复完成，数据已完整写入当前设备'));
                   } catch (e) {
                     setError(humanError(e));
                   } finally {
@@ -887,7 +954,7 @@ function BackupSettings({
                   }
                 }}
               >
-                确认恢复
+                {tr('确认恢复')}
               </Button>
             </div>
           </div>

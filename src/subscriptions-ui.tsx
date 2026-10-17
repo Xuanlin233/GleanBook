@@ -9,8 +9,17 @@ import {
   nextBilling,
 } from './subscriptions';
 import { Button, Empty, ErrorText, Field, Icon, Notice, Panel, humanError } from './ui';
+import { tr } from './i18n';
 
-const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const weekdays = [
+  tr('周一'),
+  tr('周二'),
+  tr('周三'),
+  tr('周四'),
+  tr('周五'),
+  tr('周六'),
+  tr('周日'),
+];
 const presets = [
   'iCloud+',
   'Apple Music',
@@ -19,17 +28,22 @@ const presets = [
   'Netflix',
   'Spotify',
   'YouTube Premium',
-  'B站大会员',
-  '腾讯视频',
-  '爱奇艺',
-  '网易云音乐',
-  'QQ音乐',
+  tr('B站大会员'),
+  tr('腾讯视频'),
+  tr('爱奇艺'),
+  tr('网易云音乐'),
+  tr('QQ音乐'),
 ];
-const cycleUnit = { monthly: '月', yearly: '年', weekly: '周' } as const;
+const cycleUnit = { monthly: tr('月'), yearly: tr('年'), weekly: tr('周') } as const;
 export function billingText(s: Subscription) {
-  if (s.cycle === 'weekly') return `每${weekdays[(s.weekday ?? 1) - 1]}`;
-  const day = `${s.day} 日${(s.day ?? 1) > 28 ? '（小月取月末）' : ''}`;
-  return s.cycle === 'yearly' ? `每年 ${s.month} 月 ${day}` : `每月 ${day}`;
+  if (s.cycle === 'weekly') return tr('每{weekday}', { weekday: weekdays[(s.weekday ?? 1) - 1] });
+  const day =
+    (s.day ?? 1) > 28
+      ? tr('{day} 日（小月取月末）', { day: s.day })
+      : tr('{day} 日', { day: s.day });
+  return s.cycle === 'yearly'
+    ? tr('每年 {month} 月 {day}', { month: s.month, day })
+    : tr('每月 {day}', { day });
 }
 // Stable soft colour per name, so each service keeps its own monogram tint.
 function tint(name: string) {
@@ -38,14 +52,14 @@ function tint(name: string) {
   return `hsl(${h} 62% 40%)`;
 }
 function dueText(next: number | null, tz: string) {
-  if (next === null) return { text: '无后续扣款', soon: false };
+  if (next === null) return { text: tr('无后续扣款'), soon: false };
   const today = dayIn(new Date(), tz),
     day = dayIn(new Date(next), tz),
     days = Math.round((Date.parse(day) - Date.parse(today)) / 86400000);
-  if (days <= 0) return { text: '今天扣款', soon: true };
-  if (days === 1) return { text: '明天扣款', soon: true };
-  if (days <= 3) return { text: `${days} 天后扣款`, soon: true };
-  return { text: `下次 ${day.slice(5).replace('-', '/')}`, soon: false };
+  if (days <= 0) return { text: tr('今天扣款'), soon: true };
+  if (days === 1) return { text: tr('明天扣款'), soon: true };
+  if (days <= 3) return { text: tr('{days} 天后扣款', { days }), soon: true };
+  return { text: tr('下次 {date}', { date: day.slice(5).replace('-', '/') }), soon: false };
 }
 
 export function SubscriptionsPanel({
@@ -64,16 +78,16 @@ export function SubscriptionsPanel({
   );
   return (
     <Panel
-      title="订阅"
+      title={tr('订阅')}
       className="subscriptions-panel"
       aside={
         <div className="button-group">
           {l.subscriptions.some((s) => s.active) && (
-            <span className="subtle">每月约 {money(total, hide)}</span>
+            <span className="subtle">{tr('每月约 {money}', { money: money(total, hide) })}</span>
           )}
           <Button variant="text" onClick={() => onOpen()}>
             <Icon name="plus" size={16} />
-            添加订阅
+            {tr('添加订阅')}
           </Button>
         </div>
       }
@@ -95,10 +109,10 @@ export function SubscriptionsPanel({
                 <span className="subscription-copy">
                   <strong>
                     {s.name}
-                    {!s.active && <span className="tiny-pill">已暂停</span>}
+                    {!s.active && <span className="tiny-pill">{tr('已暂停')}</span>}
                   </strong>
                   <span>
-                    {billingText(s)} · {a?.name ?? '账户已删除'}
+                    {billingText(s)} · {a?.name ?? tr('账户已删除')}
                   </span>
                 </span>
                 <span className="subscription-value">
@@ -117,14 +131,16 @@ export function SubscriptionsPanel({
       ) : (
         <Empty
           icon="calendar"
-          title="还没有订阅"
-          description="记下每月固定扣费的软件和会员，到扣款日自动从设定账户记一笔支出。"
-          action={<Button onClick={() => onOpen()}>添加订阅</Button>}
+          title={tr('还没有订阅')}
+          description={tr('记下每月固定扣费的软件和会员，到扣款日自动从设定账户记一笔支出。')}
+          action={<Button onClick={() => onOpen()}>{tr('添加订阅')}</Button>}
         />
       )}
       {missing.length > 0 && (
         <p className="subtle subscriptions-note">
-          {missing.join('、')} 账户缺少人民币汇率，未计入每月合计，且到期时会暂缓扣款。
+          {tr('{accounts} 账户缺少人民币汇率，未计入每月合计，且到期时会暂缓扣款。', {
+            accounts: missing.join(tr('、')),
+          })}
         </p>
       )}
     </Panel>
@@ -170,7 +186,7 @@ export function SubscriptionForm({
   const account = accounts.find((a) => a.id === accountId);
   const draft: Subscription = {
     id: record?.id ?? 'draft',
-    name: name.trim() || '订阅',
+    name: name.trim() || tr('订阅'),
     amount: /^\d+(\.\d+)?$/.test(amount) && D(amount).gt(0) ? amount : '1',
     accountId,
     categoryId,
@@ -212,15 +228,15 @@ export function SubscriptionForm({
       className="form"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!name.trim()) return setError('请填写订阅名称');
+        if (!name.trim()) return setError(tr('请填写订阅名称'));
         if (!/^\d+(\.\d+)?$/.test(amount.trim()) || !D(amount.trim()).gt(0))
-          return setError('请填写大于零的金额');
+          return setError(tr('请填写大于零的金额'));
         void save({ ...draft, id: record?.id ?? uid(), name: name.trim(), amount: amount.trim() });
       }}
     >
       {!record && (
         <div className="suggestions">
-          <span>常见订阅</span>
+          <span>{tr('常见订阅')}</span>
           {presets.map((p) => (
             <button type="button" key={p} onClick={() => setName(p)}>
               {p}
@@ -229,22 +245,24 @@ export function SubscriptionForm({
         </div>
       )}
       <div className="form-grid">
-        <Field label="名称">
+        <Field label={tr('名称')}>
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} required />
         </Field>
-        <Field label="扣款账户">
+        <Field label={tr('扣款账户')}>
           <select value={accountId} onChange={(e) => setAccount(e.target.value)} required>
             <option value="" disabled>
-              请选择手动维护的账户
+              {tr('请选择手动维护的账户')}
             </option>
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name}（{a.currency}）
+                {tr('{name}（{currency}）', { name: a.name, currency: a.currency })}
               </option>
             ))}
           </select>
         </Field>
-        <Field label={`每期金额（${account?.currency ?? '账户币种'}）`}>
+        <Field
+          label={tr('每期金额（{currency}）', { currency: account?.currency ?? tr('账户币种') })}
+        >
           <input
             inputMode="decimal"
             value={amount}
@@ -253,7 +271,7 @@ export function SubscriptionForm({
             required
           />
         </Field>
-        <Field label="扣费周期">
+        <Field label={tr('扣费周期')}>
           <select value={cycle} onChange={(e) => setCycle(e.target.value as Subscription['cycle'])}>
             {Object.entries(subscriptionCycles).map(([k, v]) => (
               <option key={k} value={k}>
@@ -263,18 +281,18 @@ export function SubscriptionForm({
           </select>
         </Field>
         {cycle === 'yearly' && (
-          <Field label="扣款月份">
+          <Field label={tr('扣款月份')}>
             <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                 <option key={m} value={m}>
-                  {m} 月
+                  {tr('{m} 月', { m })}
                 </option>
               ))}
             </select>
           </Field>
         )}
         {cycle === 'weekly' ? (
-          <Field label="扣款星期">
+          <Field label={tr('扣款星期')}>
             <select value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
               {weekdays.map((w, i) => (
                 <option key={w} value={i + 1}>
@@ -284,17 +302,18 @@ export function SubscriptionForm({
             </select>
           </Field>
         ) : (
-          <Field label="扣款日">
+          <Field label={tr('扣款日')}>
             <select value={day} onChange={(e) => setDay(Number(e.target.value))}>
               {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                 <option key={d} value={d}>
-                  {d} 日{d > 28 ? '（小月取月末）' : ''}
+                  {tr('{d} 日', { d })}
+                  {d > 28 ? tr('（小月取月末）') : ''}
                 </option>
               ))}
             </select>
           </Field>
         )}
-        <Field label="支出分类">
+        <Field label={tr('支出分类')}>
           <select value={categoryId} onChange={(e) => setCategory(e.target.value)}>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -303,7 +322,7 @@ export function SubscriptionForm({
             ))}
           </select>
         </Field>
-        <Field label="开始日期" hint="从这天起的扣款日开始自动扣费">
+        <Field label={tr('开始日期')} hint={tr('从这天起的扣款日开始自动扣费')}>
           <input
             type="date"
             value={startDate}
@@ -311,36 +330,54 @@ export function SubscriptionForm({
             required
           />
         </Field>
-        <Field label="结束日期（选填）" hint="到期不再续订时填写">
+        <Field label={tr('结束日期（选填）')} hint={tr('到期不再续订时填写')}>
           <input type="date" value={endDate} onChange={(e) => setEnd(e.target.value)} />
         </Field>
-        <Field label="备注（选填）">
+        <Field label={tr('备注（选填）')}>
           <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
         </Field>
       </div>
       <Notice>
-        每到扣款日，打开网站时会自动从「{account?.name ?? '扣款账户'}」记一笔支出
-        {account && account.currency !== 'CNY' ? '，按当时的人民币汇率计入消费统计' : ''}
-        ，计入当月消费和预算。约合每月 {money(monthlyEquivalent(draft), false, false)}{' '}
-        {account?.currency ?? ''}。
+        {account && account.currency !== 'CNY'
+          ? tr(
+              '每到扣款日，打开网站时会自动从「{account}」记一笔支出，按当时的人民币汇率计入消费统计，计入当月消费和预算。约合每月 {money} {currency}。',
+              {
+                account: account.name,
+                money: money(monthlyEquivalent(draft), false, false),
+                currency: account.currency,
+              },
+            )
+          : tr(
+              '每到扣款日，打开网站时会自动从「{account}」记一笔支出，计入当月消费和预算。约合每月 {money} {currency}。',
+              {
+                account: account?.name ?? tr('扣款账户'),
+                money: money(monthlyEquivalent(draft), false, false),
+                currency: account?.currency ?? '',
+              },
+            )}
       </Notice>
       {backfill > 0 && (
         <Notice tone="warning">
-          开始日期早于今天：保存后会补记从 {startDate} 起已到期的 {backfill}{' '}
-          笔扣款。如果这些扣款已经手动记过账，请把开始日期改成下一次扣款日。
+          {tr(
+            '开始日期早于今天：保存后会补记从 {startDate} 起已到期的 {count} 笔扣款。如果这些扣款已经手动记过账，请把开始日期改成下一次扣款日。',
+            { startDate, count: backfill },
+          )}
         </Notice>
       )}
       {record && (
         <p className="form-footnote">
-          已自动扣款 {paid.length} 笔
           {paid.length
-            ? `，共 ${money(
-                paid.reduce((v, t) => v.plus(t.amount), D(0)),
-                l.settings.hideAmounts,
-                false,
-              )} ${account?.currency ?? ''}`
-            : ''}
-          。修改只影响以后的扣款，已记的账单可在账单页修改或删除。
+            ? tr('已自动扣款 {count} 笔，共 {money} {currency}。', {
+                count: paid.length,
+                money: money(
+                  paid.reduce((v, t) => v.plus(t.amount), D(0)),
+                  l.settings.hideAmounts,
+                  false,
+                ),
+                currency: account?.currency ?? '',
+              })
+            : tr('已自动扣款 0 笔。')}
+          {tr('修改只影响以后的扣款，已记的账单可在账单页修改或删除。')}
         </p>
       )}
       <ErrorText error={error} />
@@ -357,37 +394,44 @@ export function SubscriptionForm({
                     active: !record.active,
                     cursor: record.active ? record.cursor : new Date().toISOString(),
                   },
-                  record.active ? '订阅已暂停，不再自动扣款' : '订阅已恢复，从下一个扣款日开始扣款',
+                  record.active
+                    ? tr('订阅已暂停，不再自动扣款')
+                    : tr('订阅已恢复，从下一个扣款日开始扣款'),
                 )
               }
             >
-              {record.active ? '暂停' : '恢复'}
+              {record.active ? tr('暂停') : tr('恢复')}
             </Button>
             <Button
               variant="danger"
               disabled={busy}
               onClick={() => {
-                if (!confirm(`删除「${record.name}」订阅？已经记下的扣款账单会保留。`)) return;
+                if (
+                  !confirm(
+                    tr('删除「{name}」订阅？已经记下的扣款账单会保留。', { name: record.name }),
+                  )
+                )
+                  return;
                 setBusy(true);
                 onSave((s) => ({
                   ...s,
                   subscriptions: s.subscriptions.filter((x) => x.id !== record.id),
                 }))
                   .then(() => {
-                    notify('订阅已删除，已记的扣款账单保留');
+                    notify(tr('订阅已删除，已记的扣款账单保留'));
                     onClose();
                   })
                   .catch((e) => setError(humanError(e)))
                   .finally(() => setBusy(false));
               }}
             >
-              删除
+              {tr('删除')}
             </Button>
           </>
         )}
-        <Button onClick={onClose}>取消</Button>
+        <Button onClick={onClose}>{tr('取消')}</Button>
         <Button type="submit" variant="primary" disabled={busy || !accounts.length}>
-          保存订阅
+          {tr('保存订阅')}
         </Button>
       </div>
     </form>

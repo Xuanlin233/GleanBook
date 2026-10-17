@@ -56,6 +56,7 @@ import {
 import { Assets, Bills, HoldingDetail, Overview } from './pages';
 import { Settings } from './settings';
 import { Button, Empty, ErrorText, Field, Icon, IconButton, Modal, Notice, humanError } from './ui';
+import { tr } from './i18n';
 type ModalState =
   | { type: 'transaction'; record?: Transaction }
   | { type: 'account'; record?: Account }
@@ -71,15 +72,20 @@ type ModalState =
   | { type: 'clear' }
   | null;
 const navigation = [
-  ['overview', 'overview', '总览'],
-  ['bills', 'receipt', '账单'],
-  ['assets', 'wallet', '资产'],
-  ['settings', 'settings', '设置'],
+  ['overview', 'overview', tr('总览')],
+  ['bills', 'receipt', tr('账单')],
+  ['assets', 'wallet', tr('资产')],
+  ['settings', 'settings', tr('设置')],
 ];
 export default function App() {
-  const [mode, setModeState] = useState(() =>
-      sessionStorage.getItem('shizhang-mode') === 'demo' ? 'demo' : 'real',
-    ),
+  // http://localhost:8787/?demo opens the built-in demo ledger directly (for a quick look).
+  const [mode, setModeState] = useState(() => {
+      if (new URLSearchParams(location.search).has('demo')) {
+        sessionStorage.setItem('shizhang-mode', 'demo');
+        history.replaceState(null, '', location.pathname + location.hash);
+      }
+      return sessionStorage.getItem('shizhang-mode') === 'demo' ? 'demo' : 'real';
+    }),
     [ledger, setLedger] = useState<Ledger | null>(null),
     [page, setPage] = useState(() => location.hash.slice(1) || 'overview'),
     [modal, setModal] = useState<ModalState>(null),
@@ -114,7 +120,7 @@ export default function App() {
         .catch(() => {})
         .then(async () => {
           const current = ledgerRef.current;
-          if (!current) throw new Error('账本尚未加载');
+          if (!current) throw new Error(tr('账本尚未加载'));
           const next = captureSnapshot(validateLedger(update(structuredClone(current))));
           // Remember when each record changed on this device; the PC master resolves
           // concurrent edits by these times. Before the first sync everything is sent anyway.
@@ -170,7 +176,9 @@ export default function App() {
     })().catch((e) => {
       if (alive)
         setFatal(
-          '无法打开本地账本：' + humanError(e) + '。请勿清理浏览器数据，可重新打开应用重试。',
+          tr('无法打开本地账本：{error}。请勿清理浏览器数据，可重新打开应用重试。', {
+            error: humanError(e),
+          }),
         );
     });
     return () => {
@@ -187,7 +195,7 @@ export default function App() {
             syncRef.current = sync;
             setSyncInfo(sync);
             setLedger(l);
-            notify('账本已在其他窗口更新，正在编辑的表单保留');
+            notify(tr('账本已在其他窗口更新，正在编辑的表单保留'));
           })
           .catch((e) => notify(humanError(e)));
     };
@@ -243,7 +251,10 @@ export default function App() {
       setSyncStatus({ kind: 'synced', at: new Date().toISOString() });
       if (rejectedCount)
         notify(
-          `${rejectedCount} 条修改与电脑主库的数据冲突，已按主库保留：${answer.rejected[0]?.reason ?? '数据校验未通过'}`,
+          tr('{count} 条修改与电脑主库的数据冲突，已按主库保留：{reason}', {
+            count: rejectedCount,
+            reason: answer.rejected[0]?.reason ?? tr('数据校验未通过'),
+          }),
         );
       // Something typed during this round is still pending: send it right away.
       if (Object.keys(syncRef.current.touched).length && syncRef.current.base)
@@ -326,7 +337,7 @@ export default function App() {
         });
         reg.update().catch(() => {});
       })
-      .catch(() => notify('离线缓存未能启用，请检查 HTTPS 和浏览器设置'));
+      .catch(() => notify(tr('离线缓存未能启用，请检查 HTTPS 和浏览器设置')));
     const changed = () => {
       if (updateRequested.current) location.reload();
     };
@@ -359,10 +370,10 @@ export default function App() {
             try {
               prices.set(h.id, await fetchPrice(h));
             } catch (e) {
-              failures.push(h.name + '：' + humanError(e));
+              failures.push(tr('{name}：{error}', { name: h.name, error: humanError(e) }));
             }
           }
-        } else if (list.length) failures.push('当前离线，未获取新行情');
+        } else if (list.length) failures.push(tr('当前离线，未获取新行情'));
         // Automatic CNY rates first, so cross-currency 定投 below can settle in this pass.
         let autoRates: AutoRate[] | null = null;
         if (mode !== 'demo' && navigator.onLine)
@@ -407,18 +418,19 @@ export default function App() {
           return charged.ledger;
         });
         failures.push(...subscriptionWaiting);
-        if (subscriptionCharges) notify(`订阅已到扣款日，自动记账 ${subscriptionCharges} 笔`);
-        if (settled) notify(`定投已按当期价格入账 ${settled} 期`);
+        if (subscriptionCharges)
+          notify(tr('订阅已到扣款日，自动记账 {count} 笔', { count: subscriptionCharges }));
+        if (settled) notify(tr('定投已按当期价格入账 {count} 期', { count: settled }));
         setErrors(failures);
         if (!quiet)
           notify(
             failures.length
-              ? '部分行情未更新，原有数据已保留'
+              ? tr('部分行情未更新，原有数据已保留')
               : mode === 'demo'
-                ? '演示快照已更新，未请求真实接口'
+                ? tr('演示快照已更新，未请求真实接口')
                 : prices.size
-                  ? '公共行情与当日快照已更新'
-                  : '账本与当日快照已更新；汇率及未覆盖的价格需手动维护',
+                  ? tr('公共行情与当日快照已更新')
+                  : tr('账本与当日快照已更新；汇率及未覆盖的价格需手动维护'),
           );
       } catch (e) {
         if (!quiet) notify(humanError(e));
@@ -450,7 +462,7 @@ export default function App() {
   }, [refresh]);
   function setMode(next: string) {
     if (isRefreshing.current) {
-      notify('正在刷新，请稍后切换账本');
+      notify(tr('正在刷新，请稍后切换账本'));
       return;
     }
     setModal(null);
@@ -461,27 +473,27 @@ export default function App() {
   function addTransaction() {
     if (!ledger?.accounts.length) {
       setModal({ type: 'account' });
-      notify('先添加一个账户，再记第一笔');
+      notify(tr('先添加一个账户，再记第一笔'));
     } else setModal({ type: 'transaction' });
   }
   async function deleteRecord(t: Transaction) {
     await commit((l) => {
       if (l.transactions.some((x) => x.refundOf === t.id))
-        throw new Error('此支出有关联退款，请先删除退款记录');
+        throw new Error(tr('此支出有关联退款，请先删除退款记录'));
       return { ...l, transactions: l.transactions.filter((x) => x.id !== t.id) };
     });
     setModal(null);
-    notify('账单已删除，余额和统计已重算');
+    notify(tr('账单已删除，余额和统计已重算'));
   }
   function deleteRun(r: PlanRun) {
-    if (!confirm('删除这期定投记录？来源和去向会重新计算，计划不会再补生成这一期。')) return;
+    if (!confirm(tr('删除这期定投记录？来源和去向会重新计算，计划不会再补生成这一期。'))) return;
     commit((l) => ({ ...l, planRuns: l.planRuns.filter((x) => x.id !== r.id) }))
-      .then(() => notify('这期定投记录已删除，余额与持仓已重算'))
+      .then(() => notify(tr('这期定投记录已删除，余额与持仓已重算')))
       .catch((e) => notify(humanError(e)));
   }
   async function refreshOne(h: Holding) {
     if (mode === 'demo') {
-      notify('演示模式不请求真实行情');
+      notify(tr('演示模式不请求真实行情'));
       return;
     }
     try {
@@ -490,7 +502,7 @@ export default function App() {
         ...l,
         holdings: l.holdings.map((x) => (x.id === h.id ? { ...x, price } : x)),
       }));
-      notify('官方公共行情已更新');
+      notify(tr('官方公共行情已更新'));
     } catch (e) {
       notify(humanError(e));
     }
@@ -501,14 +513,14 @@ export default function App() {
         <span className="app-icon">
           <Icon name="book" size={32} />
         </span>
-        <h1>拾账</h1>
+        <h1>{tr('拾账')}</h1>
         {fatal ? (
           <>
             <Notice tone="warning">{fatal}</Notice>
-            <Button onClick={() => location.reload()}>重新打开</Button>
+            <Button onClick={() => location.reload()}>{tr('重新打开')}</Button>
           </>
         ) : (
-          <p>正在打开你的本地账本…</p>
+          <p>{tr('正在打开你的本地账本…')}</p>
         )}
       </div>
     );
@@ -530,7 +542,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
-        跳到主要内容
+        {tr('跳到主要内容')}
       </a>
       <aside className="sidebar">
         <a href="#overview" className="brand" onClick={() => navigate('overview')}>
@@ -538,11 +550,12 @@ export default function App() {
             <Icon name="book" size={25} />
           </span>
           <span>
-            拾账<small>把生活，理清楚。</small>
+            {tr('拾账')}
+            <small>{tr('把生活，理清楚。')}</small>
           </span>
         </a>
-        <div className="workspace-label">我的个人账本</div>
-        <nav aria-label="主要导航">
+        <div className="workspace-label">{tr('我的个人账本')}</div>
+        <nav aria-label={tr('主要导航')}>
           {navigation.map(([id, icon, name]) => (
             <button
               key={id}
@@ -558,24 +571,24 @@ export default function App() {
         </nav>
         <button className="sidebar-add" onClick={addTransaction}>
           <Icon name="plus" size={21} />
-          记一笔
+          {tr('记一笔')}
         </button>
         <div className="sidebar-bottom">
           <div className="local-private">
             <Icon name="shield" size={21} />
             <div>
-              <strong>私有 · 离线优先</strong>
-              <span>仅保存在当前设备</span>
+              <strong>{tr('私有 · 离线优先')}</strong>
+              <span>{tr('仅保存在当前设备')}</span>
             </div>
           </div>
           <button
             onClick={() => setMode(mode === 'real' ? 'demo' : 'real')}
             className="demo-switch"
           >
-            {mode === 'real' ? '体验演示账本' : '返回真实账本'}
+            {mode === 'real' ? tr('体验演示账本') : tr('返回真实账本')}
             <Icon name="arrow" size={15} />
           </button>
-          <p>拾起每一笔，照顾每一天。</p>
+          <p>{tr('拾起每一笔，照顾每一天。')}</p>
         </div>
       </aside>
       <div className="main-shell">
@@ -583,9 +596,9 @@ export default function App() {
           <div className="breadcrumb">
             <span className="mobile-wordmark">
               <Icon name="book" />
-              拾账
+              {tr('拾账')}
             </span>
-            <span className="desktop-only">个人财务</span>
+            <span className="desktop-only">{tr('个人财务')}</span>
             <span className="desktop-only">/</span>
             <strong>{navigation.find(([id]) => id === currentPage)![2]}</strong>
           </div>
@@ -596,7 +609,9 @@ export default function App() {
                 navigate('settings');
                 setSettingsJump((n) => n + 1);
               }}
-              aria-label={`同步状态：${syncLabel(syncStatus, syncInfo, mode).text}，打开同步设置`}
+              aria-label={tr('同步状态：{text}，打开同步设置', {
+                text: syncLabel(syncStatus, syncInfo, mode).text,
+              })}
             >
               <Icon
                 name={!online ? 'offline' : syncStatus.kind === 'synced' ? 'check' : 'shield'}
@@ -607,7 +622,7 @@ export default function App() {
             <span className="topbar-divider" />
             <IconButton
               name={ledger.settings.hideAmounts ? 'eyeoff' : 'eye'}
-              label={ledger.settings.hideAmounts ? '显示金额' : '隐藏金额'}
+              label={ledger.settings.hideAmounts ? tr('显示金额') : tr('隐藏金额')}
               onClick={() =>
                 commit((l) => ({
                   ...l,
@@ -617,14 +632,14 @@ export default function App() {
             />
             <button
               className={`icon-button ${refreshing ? 'refreshing' : ''}`}
-              aria-label="刷新账本和公共行情"
+              aria-label={tr('刷新账本和公共行情')}
               disabled={refreshing}
               onClick={() => refresh(true)}
             >
               <Icon name="refresh" />
             </button>
-            <span className="avatar" aria-label="个人账本">
-              L
+            <span className="avatar" aria-label={tr('个人账本')}>
+              {tr('拾')}
             </span>
           </div>
         </header>
@@ -633,10 +648,11 @@ export default function App() {
             <div className="demo-banner">
               <Icon name="info" size={18} />
               <span>
-                <strong>独立演示账本</strong> · 所有示例持仓与历史行情仅用于演示，不是真实资产。
+                <strong>{tr('独立演示账本')}</strong>{' '}
+                {tr('· 所有示例持仓与历史行情仅用于演示，不是真实资产。')}
               </span>
               <button onClick={() => setMode('real')}>
-                返回真实账本
+                {tr('返回真实账本')}
                 <Icon name="arrow" size={16} />
               </button>
             </div>
@@ -645,8 +661,10 @@ export default function App() {
             <div className="update-banner">
               <Icon name="refresh" size={18} />
               <span>
-                拾账有新版本。
-                {modal ? '请先保存或关闭当前表单，草稿会保留。' : '账本已保存在本地，可安全更新。'}
+                {tr('拾账有新版本。')}
+                {modal
+                  ? tr('请先保存或关闭当前表单，草稿会保留。')
+                  : tr('账本已保存在本地，可安全更新。')}
               </span>
               <Button
                 disabled={!!modal}
@@ -655,7 +673,7 @@ export default function App() {
                   waiting.postMessage({ type: 'SKIP_WAITING' });
                 }}
               >
-                更新应用
+                {tr('更新应用')}
               </Button>
             </div>
           )}
@@ -713,12 +731,12 @@ export default function App() {
           )}
         </main>
         <footer className="app-footer">
-          <span>拾账</span>
-          <span>让每一笔，都有迹可循。</span>
-          <span>本地优先 · 你的数据，由你掌握</span>
+          <span>{tr('拾账')}</span>
+          <span>{tr('让每一笔，都有迹可循。')}</span>
+          <span>{tr('本地优先 · 你的数据，由你掌握')}</span>
         </footer>
       </div>
-      <nav className="bottom-nav" aria-label="移动端主要导航">
+      <nav className="bottom-nav" aria-label={tr('移动端主要导航')}>
         {navigation.map(([id, icon, name]) => (
           <button
             key={id}
@@ -735,13 +753,16 @@ export default function App() {
         <div className="toast" role="status">
           <Icon name="info" size={18} />
           <span>{toast}</span>
-          <button aria-label="关闭提示" onClick={() => setToast('')}>
+          <button aria-label={tr('关闭提示')} onClick={() => setToast('')}>
             <Icon name="close" size={16} />
           </button>
         </div>
       )}
       {modal?.type === 'transaction' && (
-        <Modal title={modal.record ? '账单详情与编辑' : '记一笔'} onClose={() => setModal(null)}>
+        <Modal
+          title={modal.record ? tr('账单详情与编辑') : tr('记一笔')}
+          onClose={() => setModal(null)}
+        >
           <TransactionForm
             ledger={ledger}
             record={modal.record}
@@ -753,13 +774,16 @@ export default function App() {
         </Modal>
       )}
       {modal?.type === 'account' && (
-        <Modal title={modal.record ? '编辑账户' : '添加账户'} onClose={() => setModal(null)}>
+        <Modal
+          title={modal.record ? tr('编辑账户') : tr('添加账户')}
+          onClose={() => setModal(null)}
+        >
           <AccountForm record={modal.record} onSave={commit} onClose={() => setModal(null)} />
         </Modal>
       )}
       {modal?.type === 'holding' && (
         <Modal
-          title={modal.record ? '编辑期初持仓' : '添加投资持仓'}
+          title={modal.record ? tr('编辑期初持仓') : tr('添加投资持仓')}
           onClose={() => setModal(null)}
         >
           <HoldingForm record={modal.record} onSave={commit} onClose={() => setModal(null)} />
@@ -771,25 +795,27 @@ export default function App() {
             <div className="detail-hero">
               <span>
                 {accountKinds[currentAccount.kind]} ·{' '}
-                {currentAccount.source === 'manual' ? '手动账本' : '外部快照'}
+                {currentAccount.source === 'manual' ? tr('手动账本') : tr('外部快照')}
               </span>
               <strong>
                 {ledger.settings.hideAmounts
                   ? '••••'
                   : `${currentAccount.currency} ${exact(accountBalance(ledger, currentAccount))}`}
               </strong>
-              <p>期初余额 {ledger.settings.hideAmounts ? '••••' : currentAccount.opening}</p>
+              <p>
+                {tr('期初余额')} {ledger.settings.hideAmounts ? '••••' : currentAccount.opening}
+              </p>
             </div>
             <Notice>
               {currentAccount.source === 'manual'
-                ? '余额由期初余额与全部账本记录重新计算。历史记录修改或删除后自动更正。'
-                : '余额仅依据外部最近快照，不再次扣减本地生活账单。'}
+                ? tr('余额由期初余额与全部账本记录重新计算。历史记录修改或删除后自动更正。')
+                : tr('余额仅依据外部最近快照，不再次扣减本地生活账单。')}
             </Notice>
             <div className="button-group wrap">
               {currentAccount.source === 'manual' && (
                 <Button onClick={() => setModal({ type: 'account', record: currentAccount })}>
                   <Icon name="edit" />
-                  编辑账户
+                  {tr('编辑账户')}
                 </Button>
               )}
               <Button
@@ -803,28 +829,28 @@ export default function App() {
                       ) ||
                       l.investments.some((t) => t.accountId === currentAccount.id)
                     )
-                      throw new Error('账户已有账单或投资记录引用，请先删除或迁移这些记录');
+                      throw new Error(tr('账户已有账单或投资记录引用，请先删除或迁移这些记录'));
                     if (l.subscriptions.some((s) => s.accountId === currentAccount.id))
-                      throw new Error('账户被订阅引用，请先删除或改用其他扣款账户');
+                      throw new Error(tr('账户被订阅引用，请先删除或改用其他扣款账户'));
                     if (
                       [...l.plans, ...l.planRuns].some(
                         (p) => p.sourceType === 'account' && p.sourceId === currentAccount.id,
                       )
                     )
-                      throw new Error('账户被定投计划或记录引用，请先删除相关定投');
+                      throw new Error(tr('账户被定投计划或记录引用，请先删除相关定投'));
                     if (!accountBalance(l, currentAccount).eq(0))
-                      throw new Error('请先确认期初余额为零，再删除账户');
+                      throw new Error(tr('请先确认期初余额为零，再删除账户'));
                     return { ...l, accounts: l.accounts.filter((a) => a.id !== currentAccount.id) };
                   })
                     .then(() => {
                       setModal(null);
-                      notify('空账户已删除');
+                      notify(tr('空账户已删除'));
                     })
                     .catch((e) => notify(humanError(e)))
                 }
               >
                 <Icon name="trash" />
-                删除空账户
+                {tr('删除空账户')}
               </Button>
             </div>
           </div>
@@ -841,7 +867,7 @@ export default function App() {
             onRefresh={() => refreshOne(currentHolding)}
             onDelete={() => {
               if (ledger.investments.some((e) => e.holdingId === currentHolding.id)) {
-                notify('请先删除此持仓的投资记录，再删除持仓');
+                notify(tr('请先删除此持仓的投资记录，再删除持仓'));
                 return;
               }
               if (
@@ -851,10 +877,10 @@ export default function App() {
                     (p.sourceType === 'holding' && p.sourceId === currentHolding.id),
                 )
               ) {
-                notify('此持仓被定投计划或记录引用，请先删除相关定投');
+                notify(tr('此持仓被定投计划或记录引用，请先删除相关定投'));
                 return;
               }
-              if (!confirm('删除此持仓？这将改变资产总额。')) return;
+              if (!confirm(tr('删除此持仓？这将改变资产总额。'))) return;
               commit((l) => ({
                 ...l,
                 holdings: l.holdings.filter((h) => h.id !== currentHolding.id),
@@ -863,9 +889,9 @@ export default function App() {
                 .catch((e) => notify(humanError(e)));
             }}
             onDeleteEvent={(e) => {
-              if (!confirm('删除此投资记录？持仓数量、成本与结算账户余额会重新计算。')) return;
+              if (!confirm(tr('删除此投资记录？持仓数量、成本与结算账户余额会重新计算。'))) return;
               commit((l) => ({ ...l, investments: l.investments.filter((x) => x.id !== e.id) }))
-                .then(() => notify('投资记录已删除，余额已重算'))
+                .then(() => notify(tr('投资记录已删除，余额已重算')))
                 .catch((e) => notify(humanError(e)));
             }}
             onConfirm={(record) => setModal({ type: 'confirm-investment', record })}
@@ -877,7 +903,7 @@ export default function App() {
       )}
       {modal?.type === 'plan' && (
         <Modal
-          title={modal.record ? '编辑定投计划' : '新建定投计划'}
+          title={modal.record ? tr('编辑定投计划') : tr('新建定投计划')}
           wide
           onClose={() => setModal(null)}
         >
@@ -908,7 +934,7 @@ export default function App() {
         </Modal>
       )}
       {modal?.type === 'run' && currentRun && (
-        <Modal title="确认定投成交" onClose={() => setModal(null)}>
+        <Modal title={tr('确认定投成交')} onClose={() => setModal(null)}>
           <RunForm
             ledger={ledger}
             run={currentRun}
@@ -920,7 +946,7 @@ export default function App() {
         </Modal>
       )}
       {modal?.type === 'price' && currentHolding && (
-        <Modal title="更新单位价格" onClose={() => setModal(null)}>
+        <Modal title={tr('更新单位价格')} onClose={() => setModal(null)}>
           <PriceForm
             holding={currentHolding}
             onSave={commit}
@@ -929,7 +955,7 @@ export default function App() {
         </Modal>
       )}
       {modal?.type === 'trade' && currentHolding && (
-        <Modal title="记录投资操作" onClose={() => setModal(null)}>
+        <Modal title={tr('记录投资操作')} onClose={() => setModal(null)}>
           <InvestmentForm
             ledger={ledger}
             holding={currentHolding}
@@ -939,13 +965,13 @@ export default function App() {
         </Modal>
       )}
       {modal?.type === 'confirm-investment' && (
-        <Modal title="确认实际成交" onClose={() => setModal(null)}>
+        <Modal title={tr('确认实际成交')} onClose={() => setModal(null)}>
           <ConfirmInvestment event={modal.record} onSave={commit} onClose={() => setModal(null)} />
         </Modal>
       )}
       {modal?.type === 'subscription' && (
         <Modal
-          title={modal.record ? modal.record.name : '添加订阅'}
+          title={modal.record ? modal.record.name : tr('添加订阅')}
           wide
           onClose={() => setModal(null)}
         >
@@ -962,14 +988,14 @@ export default function App() {
         </Modal>
       )}
       {modal?.type === 'clear' && (
-        <Modal title="清空当前账本" onClose={() => setModal(null)}>
+        <Modal title={tr('清空当前账本')} onClose={() => setModal(null)}>
           <ClearForm
             mode={mode}
             onConfirm={async () => {
               await commit((current) => ({ ...emptyLedger(), revision: current.revision }));
               await deleteDraft(mode);
               setModal(null);
-              notify('当前账本已清空');
+              notify(tr('当前账本已清空'));
             }}
             onClose={() => setModal(null)}
           />
@@ -991,21 +1017,21 @@ function DeleteTransaction({
     <div className="delete-transaction">
       {confirm ? (
         <>
-          <span>删除后将重算余额与收支。</span>
+          <span>{tr('删除后将重算余额与收支。')}</span>
           <div className="button-group">
-            <Button onClick={() => setConfirm(false)}>取消</Button>
+            <Button onClick={() => setConfirm(false)}>{tr('取消')}</Button>
             <Button
               variant="danger"
               onClick={() => onDelete(record).catch((e) => setError(humanError(e)))}
             >
-              确认删除
+              {tr('确认删除')}
             </Button>
           </div>
         </>
       ) : (
         <Button variant="text" onClick={() => setConfirm(true)}>
           <Icon name="trash" size={17} />
-          删除这笔记录
+          {tr('删除这笔记录')}
         </Button>
       )}
       <ErrorText error={error} />
@@ -1022,29 +1048,37 @@ function ClearForm({
   onClose: () => void;
 }) {
   const [text, setText] = useState(''),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    word = tr('清空');
   return (
     <form
       className="form"
       onSubmit={(e) => {
         e.preventDefault();
-        if (text === '清空') onConfirm().catch((e) => setError(humanError(e)));
+        if (text === word) onConfirm().catch((e) => setError(humanError(e)));
       }}
     >
       <Notice tone="warning">
-        将删除当前{mode === 'demo' ? '演示' : '真实'}账本中的全部账户、账单、持仓与设置。请先导出
-        JSON 备份。另一个账本不受影响。
+        {mode === 'demo'
+          ? tr(
+              '将删除当前演示账本中的全部账户、账单、持仓与设置。请先导出 JSON 备份。另一个账本不受影响。',
+            )
+          : tr(
+              '将删除当前真实账本中的全部账户、账单、持仓与设置。请先导出 JSON 备份。另一个账本不受影响。',
+            )}
         {mode === 'real' &&
-          '真实账本已与电脑主库同步：清空会同步到电脑和其他设备（电脑主库每天自动备份，保留 60 天）。'}
+          tr(
+            '真实账本已与电脑主库同步：清空会同步到电脑和其他设备（电脑主库每天自动备份，保留 60 天）。',
+          )}
       </Notice>
-      <Field label="输入“清空”确认">
+      <Field label={tr('输入“{word}”确认', { word })}>
         <input value={text} onChange={(e) => setText(e.target.value)} autoComplete="off" />
       </Field>
       <ErrorText error={error} />
       <div className="form-actions">
-        <Button onClick={onClose}>取消</Button>
-        <Button variant="danger" type="submit" disabled={text !== '清空'}>
-          确认清空账本
+        <Button onClick={onClose}>{tr('取消')}</Button>
+        <Button variant="danger" type="submit" disabled={text !== word}>
+          {tr('确认清空账本')}
         </Button>
       </div>
     </form>
@@ -1082,9 +1116,11 @@ function ConfirmInvestment({
       }}
     >
       <Notice>
-        请按正式交易确认单填写精确份额、成交总金额及手续费。确认后以原记录日期结算。如日期需更正，请删除并重新建立该笔记录。
+        {tr(
+          '请按正式交易确认单填写精确份额、成交总金额及手续费。确认后以原记录日期结算。如日期需更正，请删除并重新建立该笔记录。',
+        )}
       </Notice>
-      <Field label="正式确认份额">
+      <Field label={tr('正式确认份额')}>
         <input
           inputMode="decimal"
           value={quantity}
@@ -1092,7 +1128,7 @@ function ConfirmInvestment({
           required
         />
       </Field>
-      <Field label="实际成交总金额（不含手续费）">
+      <Field label={tr('实际成交总金额（不含手续费）')}>
         <input
           inputMode="decimal"
           value={cash}
@@ -1100,14 +1136,14 @@ function ConfirmInvestment({
           required
         />
       </Field>
-      <Field label="实际手续费">
+      <Field label={tr('实际手续费')}>
         <input inputMode="decimal" value={fee} onChange={(e) => setFee(e.target.value)} required />
       </Field>
       <ErrorText error={error} />
       <div className="form-actions">
-        <Button onClick={onClose}>取消</Button>
+        <Button onClick={onClose}>{tr('取消')}</Button>
         <Button type="submit" variant="primary">
-          确认并重新结算
+          {tr('确认并重新结算')}
         </Button>
       </div>
     </form>

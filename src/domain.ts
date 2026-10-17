@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js';
 import { z } from 'zod';
+import { tr } from './i18n';
 
 Decimal.set({ precision: 160, rounding: Decimal.ROUND_HALF_UP });
 export const D = (v: Decimal.Value) => new Decimal(v);
@@ -12,15 +13,15 @@ const id = z
   .refine(
     (value) =>
       !Object.prototype.hasOwnProperty.call(Object.prototype, value) && value !== 'prototype',
-    '记录 ID 使用了保留名称',
+    tr('记录 ID 使用了保留名称'),
   );
 const dec = z
   .string()
   .max(48)
   .regex(/^-?\d{1,24}(\.\d{1,18})?$/)
   .refine((v) => D(v).isFinite());
-const nonneg = dec.refine((v) => D(v).gte(0), '请输入非负数');
-const positive = dec.refine((v) => D(v).gt(0), '金额必须大于零');
+const nonneg = dec.refine((v) => D(v).gte(0), tr('请输入非负数'));
+const positive = dec.refine((v) => D(v).gt(0), tr('金额必须大于零'));
 // Calculated values can have more fractional places than any single input.
 // Preserve them exactly in snapshots rather than rejecting or rounding them.
 const computed = z
@@ -35,12 +36,12 @@ const date = z
 export const currencies = ['CNY', 'USD', 'USDT', 'USDC', 'HKD', 'EUR'] as const;
 const currency = z.enum(currencies);
 export const accountKinds = {
-  cash: '现金',
-  wechat: '微信',
-  alipay: '支付宝',
-  bank: '银行卡',
-  manual: '其他账户',
-  liability: '负债',
+  cash: tr('现金'),
+  wechat: tr('微信'),
+  alipay: tr('支付宝'),
+  bank: tr('银行卡'),
+  manual: tr('其他账户'),
+  liability: tr('负债'),
 };
 export const accountSchema = z
   .object({
@@ -82,7 +83,11 @@ export const transactionSchema = z
   })
   .strict();
 // Recurring subscription (订阅): on each billing day an expense is booked to its account.
-export const subscriptionCycles = { monthly: '每月', yearly: '每年', weekly: '每周' } as const;
+export const subscriptionCycles = {
+  monthly: tr('每月'),
+  yearly: tr('每年'),
+  weekly: tr('每周'),
+} as const;
 export const subscriptionSchema = z
   .object({
     id,
@@ -151,11 +156,11 @@ export const investmentSchema = z
 // Recurring investment (定投). Each due period becomes a planRun that snapshots the plan
 // terms, so editing a plan only affects future periods.
 export const planFrequencies = {
-  daily: '每天',
-  weekdays: '每个工作日',
-  weekly: '每周',
-  biweekly: '每两周',
-  monthly: '每月',
+  daily: tr('每天'),
+  weekdays: tr('每个工作日'),
+  weekly: tr('每周'),
+  biweekly: tr('每两周'),
+  monthly: tr('每月'),
 } as const;
 const planTerms = {
   sourceType: z.enum(['account', 'holding']),
@@ -167,7 +172,7 @@ const planTerms = {
   // Money currency for mode=amount (source or target currency); target currency otherwise.
   amountCurrency: currency,
   // Percent, front-end load style: net = gross / (1 + rate).
-  feeRate: nonneg.refine((v) => D(v).lte(10), '费率不应超过 10%'),
+  feeRate: nonneg.refine((v) => D(v).lte(10), tr('费率不应超过 10%')),
 };
 export const planSchema = z
   .object({
@@ -277,7 +282,7 @@ export const ledgerSchema = z
           } catch {
             return false;
           }
-        }, '无效时区'),
+        }, tr('无效时区')),
         gainColor: z.enum(['green', 'red']),
         // Assets page: hide accounts and holdings worth less than ¥0.1.
         hideSmall: z.boolean().optional(),
@@ -317,16 +322,16 @@ export function emptyLedger(): Ledger {
     intraday: [],
     budgets: [],
     categories: [
-      ['food', '餐饮美食', 'expense', 'fork'],
-      ['shop', '购物消费', 'expense', 'bag'],
-      ['transport', '交通出行', 'expense', 'car'],
-      ['home', '居家生活', 'expense', 'house'],
-      ['fun', '休闲娱乐', 'expense', 'game'],
-      ['health', '医疗健康', 'expense', 'heart'],
-      ['other', '其他支出', 'expense', 'dots'],
-      ['salary', '工资收入', 'income', 'wallet'],
-      ['bonus', '奖金补贴', 'income', 'gift'],
-      ['other-income', '其他收入', 'income', 'dots'],
+      ['food', tr('餐饮美食'), 'expense', 'fork'],
+      ['shop', tr('购物消费'), 'expense', 'bag'],
+      ['transport', tr('交通出行'), 'expense', 'car'],
+      ['home', tr('居家生活'), 'expense', 'house'],
+      ['fun', tr('休闲娱乐'), 'expense', 'game'],
+      ['health', tr('医疗健康'), 'expense', 'heart'],
+      ['other', tr('其他支出'), 'expense', 'dots'],
+      ['salary', tr('工资收入'), 'income', 'wallet'],
+      ['bonus', tr('奖金补贴'), 'income', 'gift'],
+      ['other-income', tr('其他收入'), 'income', 'dots'],
     ].map(([id, name, kind, icon]) => ({ id, name, kind: kind as 'expense' | 'income', icon })),
     settings: {
       theme: 'system',
@@ -416,7 +421,7 @@ export function holdingPosition(l: Ledger, h: Holding) {
       quantity = quantity.plus(e.quantity);
       interest = interest.plus(e.quantity);
     }
-    if (quantity.lt(0)) throw new Error('持仓份额不足，请检查交易时间和赎回数量');
+    if (quantity.lt(0)) throw new Error(tr('持仓份额不足，请检查交易时间和赎回数量'));
   }
   return { quantity, cost, realized, pending, interest };
 }
@@ -478,7 +483,7 @@ export function totals(l: Ledger) {
     const bal = accountBalance(l, a),
       fx = rateFor(l, a.currency);
     if (!fx && !bal.eq(0)) {
-      missing.push(a.name + '：缺少 ' + a.currency + '/CNY 汇率');
+      missing.push(tr('{name}：缺少 {currency}/CNY 汇率', { name: a.name, currency: a.currency }));
       continue;
     }
     const v = bal.mul(fx ?? 1);
@@ -491,10 +496,11 @@ export function totals(l: Ledger) {
   for (const h of l.holdings) {
     const v = holdingValue(l, h);
     if (v === null) {
-      missing.push(h.name + '：缺少价格或汇率');
+      missing.push(tr('{name}：缺少价格或汇率', { name: h.name }));
       continue;
     }
     assets = assets.plus(v);
+    // Fixed Chinese keys, translated where displayed (i18n-ignore).
     const key = { fund: '基金', crypto: '加密资产', earn: '简单赚币', other: '其他资产' }[h.kind];
     distribution[key] = distribution[key].plus(v);
   }
@@ -551,14 +557,15 @@ export function validateLedger(raw: unknown): Ledger {
     l.snapshots,
   ];
   for (const items of all)
-    if (new Set(items.map((x) => x.id)).size !== items.length) throw new Error('存在重复记录 ID');
+    if (new Set(items.map((x) => x.id)).size !== items.length)
+      throw new Error(tr('存在重复记录 ID'));
   if (new Set(l.rates.map((x) => x.currency)).size !== l.rates.length)
-    throw new Error('汇率币种重复');
+    throw new Error(tr('汇率币种重复'));
   if (l.rates.some((x) => x.currency === 'CNY' && !D(x.value).eq(1)))
-    throw new Error('人民币汇率必须为 1');
+    throw new Error(tr('人民币汇率必须为 1'));
   const acc = (aid: string) => {
     const a = l.accounts.find((a) => a.id === aid);
-    if (!a) throw new Error('记录引用的账户不存在');
+    if (!a) throw new Error(tr('记录引用的账户不存在'));
     return a;
   };
   for (const a of l.accounts) {
@@ -566,25 +573,26 @@ export function validateLedger(raw: unknown): Ledger {
       a.source === 'external' &&
       (!a.externalKey || a.externalBalance === undefined || !a.updatedAt)
     )
-      throw new Error('外部账户缺少余额快照');
-    if (a.kind === 'liability' && D(a.opening).gt(0)) throw new Error('负债期初余额应小于或等于零');
+      throw new Error(tr('外部账户缺少余额快照'));
+    if (a.kind === 'liability' && D(a.opening).gt(0))
+      throw new Error(tr('负债期初余额应小于或等于零'));
   }
   for (const t of l.transactions) {
     const a = acc(t.accountId);
-    if (a.currency === 'CNY' && !D(t.cnyRate).eq(1)) throw new Error('人民币账单汇率必须为 1');
+    if (a.currency === 'CNY' && !D(t.cnyRate).eq(1)) throw new Error(tr('人民币账单汇率必须为 1'));
     if (t.kind === 'transfer') {
       if (!t.toAccountId || !t.received || t.accountId === t.toAccountId)
-        throw new Error('转账需要两个不同账户和转入金额');
+        throw new Error(tr('转账需要两个不同账户和转入金额'));
       const b = acc(t.toAccountId);
       if (a.source === 'external' || b.source === 'external')
-        throw new Error('同步账户余额只由外部快照更新，请勿记录本地划转');
+        throw new Error(tr('同步账户余额只由外部快照更新，请勿记录本地划转'));
       if (a.currency === b.currency && !D(t.amount).eq(t.received))
-        throw new Error('同币种转账金额必须相同，手续费单独填写');
+        throw new Error(tr('同币种转账金额必须相同，手续费单独填写'));
     } else {
-      if (!D(t.fee).eq(0)) throw new Error('非转账手续费请单独记一笔');
+      if (!D(t.fee).eq(0)) throw new Error(tr('非转账手续费请单独记一笔'));
       const cat = l.categories.find((c) => c.id === t.categoryId);
       if (!cat || cat.kind !== (t.kind === 'income' ? 'income' : 'expense'))
-        throw new Error('请选择匹配的收支分类');
+        throw new Error(tr('请选择匹配的收支分类'));
     }
     if (t.kind === 'refund') {
       const original = l.transactions.find((x) => x.id === t.refundOf && x.kind === 'expense');
@@ -593,120 +601,121 @@ export function validateLedger(raw: unknown): Ledger {
         acc(original.accountId).currency !== a.currency ||
         t.categoryId !== original.categoryId
       )
-        throw new Error('退款需关联同币种原支出，沿用原分类');
-      if (t.occurredAt < original.occurredAt) throw new Error('退款时间不能早于原支出');
+        throw new Error(tr('退款需关联同币种原支出，沿用原分类'));
+      if (t.occurredAt < original.occurredAt) throw new Error(tr('退款时间不能早于原支出'));
       const sum = l.transactions
         .filter((x) => x.kind === 'refund' && x.refundOf === original.id)
         .reduce((v, x) => v.plus(x.amount), D(0));
-      if (sum.gt(original.amount)) throw new Error('累计退款超过原支出');
+      if (sum.gt(original.amount)) throw new Error(tr('累计退款超过原支出'));
     }
   }
   for (const h of l.holdings) {
-    if (h.price && h.price.currency !== h.currency) throw new Error('持仓价格币种不一致');
+    if (h.price && h.price.currency !== h.currency) throw new Error(tr('持仓价格币种不一致'));
     if (
       h.price?.navDate &&
       (h.kind !== 'fund' ||
         h.price.currency !== 'CNY' ||
         h.price.navDate !== dayIn(h.price.asOf, 'Asia/Shanghai'))
     )
-      throw new Error('基金净值日期与价格数据不一致');
+      throw new Error(tr('基金净值日期与价格数据不一致'));
     if (h.source === 'okx' && (!h.externalKey || !h.updatedAt))
-      throw new Error('同步持仓缺少来源标识');
+      throw new Error(tr('同步持仓缺少来源标识'));
   }
   for (const e of l.investments) {
     const h = l.holdings.find((x) => x.id === e.holdingId);
-    if (!h || h.source !== 'manual') throw new Error('投资操作需要手动持仓');
+    if (!h || h.source !== 'manual') throw new Error(tr('投资操作需要手动持仓'));
     if (e.status === 'pending' && !['buy', 'sell'].includes(e.kind))
-      throw new Error('只有申购和赎回可待确认');
+      throw new Error(tr('只有申购和赎回可待确认'));
     if (['buy', 'sell'].includes(e.kind) && D(e.quantity).lte(0))
-      throw new Error('申购赎回必须填写精确正份额');
+      throw new Error(tr('申购赎回必须填写精确正份额'));
     if (['buy', 'sell', 'dividend'].includes(e.kind)) {
       const a = e.accountId ? acc(e.accountId) : null;
       if (!a || a.source !== 'manual' || a.currency !== h.currency)
-        throw new Error('请选择与持仓计价币种相同的手动结算账户');
+        throw new Error(tr('请选择与持仓计价币种相同的手动结算账户'));
     }
     if (e.kind === 'dividend' && (!D(e.quantity).eq(0) || D(e.cash).lt(e.fee)))
-      throw new Error('现金分红份额应为 0，金额不可小于手续费');
+      throw new Error(tr('现金分红份额应为 0，金额不可小于手续费'));
     if (
       ['interest', 'adjust'].includes(e.kind) &&
       (!D(e.cash).eq(0) || !D(e.fee).eq(0) || e.accountId)
     )
-      throw new Error('份额调整和利息不扣现金');
-    if (e.kind === 'interest' && D(e.quantity).lte(0)) throw new Error('利息份额必须为正');
+      throw new Error(tr('份额调整和利息不扣现金'));
+    if (e.kind === 'interest' && D(e.quantity).lte(0)) throw new Error(tr('利息份额必须为正'));
   }
   validatePlans(l);
   for (const s of l.subscriptions) {
     const a = acc(s.accountId);
-    if (a.source !== 'manual') throw new Error('订阅扣款账户需要手动维护的账户');
+    if (a.source !== 'manual') throw new Error(tr('订阅扣款账户需要手动维护的账户'));
     if (!l.categories.some((c) => c.id === s.categoryId && c.kind === 'expense'))
-      throw new Error('订阅需要选择支出分类');
-    if (s.cycle !== 'weekly' && !s.day) throw new Error('请选择订阅扣款日');
-    if (s.cycle === 'yearly' && !s.month) throw new Error('请选择每年扣款的月份');
-    if (s.cycle === 'weekly' && !s.weekday) throw new Error('请选择每周扣款的星期');
-    if (s.endDate && s.endDate < s.startDate) throw new Error('订阅结束日期早于开始日期');
+      throw new Error(tr('订阅需要选择支出分类'));
+    if (s.cycle !== 'weekly' && !s.day) throw new Error(tr('请选择订阅扣款日'));
+    if (s.cycle === 'yearly' && !s.month) throw new Error(tr('请选择每年扣款的月份'));
+    if (s.cycle === 'weekly' && !s.weekday) throw new Error(tr('请选择每周扣款的星期'));
+    if (s.endDate && s.endDate < s.startDate) throw new Error(tr('订阅结束日期早于开始日期'));
   }
   for (const t of l.transactions)
-    if (t.subscriptionId && t.kind !== 'expense') throw new Error('订阅扣款只能是支出');
+    if (t.subscriptionId && t.kind !== 'expense') throw new Error(tr('订阅扣款只能是支出'));
   l.holdings.forEach((h) => holdingPosition(l, h));
   for (const h of l.holdings) {
     const p = holdingPosition(l, h);
     const reserved = l.investments
       .filter((e) => e.holdingId === h.id && e.kind === 'sell' && e.status === 'pending')
       .reduce((v, e) => v.plus(e.quantity), D(0));
-    if (reserved.gt(p.quantity)) throw new Error('待赎回份额超过可用持仓');
+    if (reserved.gt(p.quantity)) throw new Error(tr('待赎回份额超过可用持仓'));
   }
   const budgetKeys = l.budgets.map((b) => b.month + ':' + (b.categoryId ?? 'total'));
-  if (new Set(budgetKeys).size !== budgetKeys.length) throw new Error('预算设置重复');
+  if (new Set(budgetKeys).size !== budgetKeys.length) throw new Error(tr('预算设置重复'));
   for (const b of l.budgets)
     if (b.categoryId && !l.categories.some((c) => c.id === b.categoryId && c.kind === 'expense'))
-      throw new Error('预算引用无效分类');
+      throw new Error(tr('预算引用无效分类'));
   for (const s of l.snapshots) {
     try {
       new Intl.DateTimeFormat('zh', { timeZone: s.timezone });
     } catch {
-      throw new Error('快照时区无效');
+      throw new Error(tr('快照时区无效'));
     }
-    if (s.day !== dayIn(s.at, s.timezone)) throw new Error('快照日期与统计时区不一致');
-    if (!D(s.net).eq(D(s.assets).minus(s.liabilities))) throw new Error('快照资产与净资产不一致');
+    if (s.day !== dayIn(s.at, s.timezone)) throw new Error(tr('快照日期与统计时区不一致'));
+    if (!D(s.net).eq(D(s.assets).minus(s.liabilities)))
+      throw new Error(tr('快照资产与净资产不一致'));
   }
   if (new Set(l.snapshots.map((s) => s.timezone + ':' + s.day)).size !== l.snapshots.length)
-    throw new Error('同一天同一时区只能保留一个快照');
+    throw new Error(tr('同一天同一时区只能保留一个快照'));
   return l;
 }
 export function planEnds(l: Ledger, x: PlanTerms) {
   const target = l.holdings.find((h) => h.id === x.targetId);
-  if (!target || target.source !== 'manual') throw new Error('定投去向需要手动维护的持仓');
+  if (!target || target.source !== 'manual') throw new Error(tr('定投去向需要手动维护的持仓'));
   let sourceCurrency: Holding['currency'], sourceName: string;
   if (x.sourceType === 'account') {
     const a = l.accounts.find((a) => a.id === x.sourceId);
     if (!a || a.source !== 'manual' || a.kind === 'liability')
-      throw new Error('定投来源需要手动维护的非负债账户');
+      throw new Error(tr('定投来源需要手动维护的非负债账户'));
     sourceCurrency = a.currency;
     sourceName = a.name;
   } else {
     const s = l.holdings.find((h) => h.id === x.sourceId);
-    if (!s || s.source !== 'manual') throw new Error('定投来源持仓需要手动维护');
-    if (s.id === target.id) throw new Error('定投来源与去向不能是同一持仓');
+    if (!s || s.source !== 'manual') throw new Error(tr('定投来源持仓需要手动维护'));
+    if (s.id === target.id) throw new Error(tr('定投来源与去向不能是同一持仓'));
     sourceCurrency = s.currency;
     sourceName = s.name;
   }
   if (x.mode === 'amount' && ![sourceCurrency, target.currency].includes(x.amountCurrency))
-    throw new Error('定额币种需为来源或去向的币种');
+    throw new Error(tr('定额币种需为来源或去向的币种'));
   if (x.mode === 'quantity' && x.amountCurrency !== target.currency)
-    throw new Error('定份额计划的计价币种应为去向持仓币种');
+    throw new Error(tr('定份额计划的计价币种应为去向持仓币种'));
   return { target, sourceCurrency, sourceName };
 }
 function validatePlans(l: Ledger) {
   for (const p of l.plans) {
     planEnds(l, p);
     if (['weekly', 'biweekly'].includes(p.frequency) && !p.weekday)
-      throw new Error('每周定投需要选择星期');
-    if (p.frequency === 'monthly' && !p.monthDay) throw new Error('每月定投需要选择日期');
-    if (p.endDate && p.endDate < p.startDate) throw new Error('定投结束日期早于开始日期');
+      throw new Error(tr('每周定投需要选择星期'));
+    if (p.frequency === 'monthly' && !p.monthDay) throw new Error(tr('每月定投需要选择日期'));
+    if (p.endDate && p.endDate < p.startDate) throw new Error(tr('定投结束日期早于开始日期'));
     try {
       new Intl.DateTimeFormat('zh', { timeZone: p.timezone });
     } catch {
-      throw new Error('定投时区无效');
+      throw new Error(tr('定投时区无效'));
     }
   }
   for (const r of l.planRuns) {
@@ -718,12 +727,12 @@ function validatePlans(l: Ledger) {
         r.targetCost === undefined ||
         (r.sourceType === 'holding' && r.sourcePrice === undefined))
     )
-      throw new Error('已确认的定投记录缺少成交数据');
+      throw new Error(tr('已确认的定投记录缺少成交数据'));
     for (const v of [r.sourceAmount, r.targetQuantity, r.targetCost, r.fee])
-      if (v !== undefined && D(v).lt(0)) throw new Error('定投成交数据不能为负');
+      if (v !== undefined && D(v).lt(0)) throw new Error(tr('定投成交数据不能为负'));
   }
   if (new Set(l.planRuns.map((r) => r.planId + '@' + r.scheduledAt)).size !== l.planRuns.length)
-    throw new Error('同一计划同一时间只能有一期定投');
+    throw new Error(tr('同一计划同一时间只能有一期定投'));
 }
 export const INTRADAY_KEEP_MS = 48 * 3600000;
 // Record a point whenever net worth or completeness changes. Changes within the same minute
@@ -768,7 +777,7 @@ export const backupSchema = z
   })
   .strict();
 export function parseBackup(text: string): Ledger {
-  if (text.length > 20 * 1024 * 1024) throw new Error('备份不能超过 20 MB');
+  if (text.length > 20 * 1024 * 1024) throw new Error(tr('备份不能超过 20 MB'));
   const parsed = backupSchema.parse(JSON.parse(text));
   return validateLedger(parsed.ledger);
 }
@@ -818,7 +827,7 @@ export function mergeBackup(current: Ledger, incoming: Ledger) {
     try {
       validateLedger(next);
     } catch (e) {
-      conflicts.push(e instanceof Error ? e.message : '合并数据关联校验失败');
+      conflicts.push(e instanceof Error ? e.message : tr('合并数据关联校验失败'));
     }
   }
   return { ledger: next, added, skipped, conflicts };
@@ -829,22 +838,28 @@ export function csvExport(l: Ledger) {
   const rows = [
     [
       'ID',
-      '类型',
-      '金额',
-      '币种',
-      '日期时间',
-      '分类',
-      '账户',
-      '转入账户',
-      '转入金额',
-      '手续费',
-      '人民币汇率',
-      '关联退款',
-      '备注',
+      tr('类型'),
+      tr('金额'),
+      tr('币种'),
+      tr('日期时间'),
+      tr('分类'),
+      tr('账户'),
+      tr('转入账户'),
+      tr('转入金额'),
+      tr('手续费'),
+      tr('人民币汇率'),
+      tr('关联退款'),
+      tr('备注'),
     ],
     ...l.transactions.map((t) => [
       t.id,
-      { income: '收入', expense: '支出', transfer: '转账', refund: '退款', fee: '手续费' }[t.kind],
+      {
+        income: tr('收入'),
+        expense: tr('支出'),
+        transfer: tr('转账'),
+        refund: tr('退款'),
+        fee: tr('手续费'),
+      }[t.kind],
       t.amount,
       l.accounts.find((a) => a.id === t.accountId)!.currency,
       t.occurredAt,

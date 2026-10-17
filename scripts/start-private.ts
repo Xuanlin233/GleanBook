@@ -1,5 +1,7 @@
-// Interactive local launcher. Verified read-only credentials are saved once, encrypted with
-// Windows DPAPI (see credential-store.ts), and reused until OKX rejects them.
+// Interactive local launcher. Verified read-only credentials are saved once in the system's
+// secret store (DPAPI / Keychain / Secret Service, see credential-store.ts) and reused until
+// OKX rejects them. Without a terminal (autostart on macOS / Linux) it never asks: it starts
+// the website with whatever is saved, or without OKX.
 // Never run this helper through a captured tool session or redirect its input.
 import { emitKeypressEvents } from 'node:readline';
 import { access } from 'node:fs/promises';
@@ -12,7 +14,7 @@ import { defaultDataDir } from '../server/ledger-store';
 import { tailscaleState } from './tailscale';
 import {
   canSaveCredentials,
-  credentialFile,
+  credentialLocation,
   forgetCredentials,
   loadCredentials,
   saveCredentials,
@@ -62,6 +64,7 @@ async function secret(label: string, minLength = 1): Promise<string> {
   });
 }
 
+const interactive = !!process.stdin.isTTY && !!process.stdout.isTTY;
 const okxKeys = ['OKX_API_KEY', 'OKX_API_SECRET', 'OKX_API_PASSPHRASE'] as const;
 function apply(c: SavedCredentials) {
   process.env.OKX_API_KEY = c.key;
@@ -128,10 +131,10 @@ try {
   try {
     creds = loadCredentials();
     fromSaved = !!creds;
-    if (creds) console.log(`使用已加密保存的凭证（${credentialFile()}）。`);
+    if (creds) console.log(`使用已加密保存的凭证（${credentialLocation()}）。`);
   } catch {
     forgetCredentials();
-    console.log('已保存的凭证无法解密（可能来自其他电脑或 Windows 用户，或文件损坏），已删除。');
+    console.log('已保存的凭证无法解密（可能来自其他电脑或系统用户，或已损坏），已删除。');
   }
 
   // At sign-in the proxy may still be starting: with --wait-network, keep trying for up to two
@@ -163,6 +166,12 @@ try {
     rejected = false,
     accessToken = creds?.accessToken ?? null;
   for (let attempt = 0; attempt < 3 && online; attempt++) {
+    if (!creds && !interactive) {
+      console.log(
+        '没有可用的已保存凭证，且当前不是交互终端：网站照常启动但不读取 OKX 持仓。\n请在终端手动运行一次 npm run start:private 输入并保存凭证。',
+      );
+      break;
+    }
     creds ??= await ask(accessToken);
     accessToken = creds.accessToken;
     apply(creds);
@@ -198,11 +207,20 @@ try {
   }
   if (verified && creds && !fromSaved) {
     if (canSaveCredentials()) {
-      saveCredentials(creds);
+      try {
+        const where = saveCredentials(creds);
+        console.log(
+          `凭证已加密保存到 ${where}，只有当前系统用户能读取。\n下次启动无需再输入；要清除请运行 npm run forget:okx。`,
+        );
+      } catch (error) {
+        console.log(`${errorText(error)}。本次照常运行，下次启动仍需输入。`);
+      }
+    } else
       console.log(
-        `凭证已用 Windows 加密保存到 ${credentialFile()}，只有当前 Windows 用户能解密。\n下次启动无需再输入；要清除请运行 npm run forget:okx。`,
+        process.platform === 'linux'
+          ? '未找到 secret-tool，无法加密保存，下次启动仍需输入。安装 libsecret-tools（Debian / Ubuntu）或 libsecret（Fedora / Arch）后即可保存。'
+          : '当前系统不支持加密保存，下次启动仍需输入。',
       );
-    } else console.log('当前系统不支持加密保存，下次启动仍需输入。');
   }
 
   // Phones reach the site through Tailscale Serve over HTTPS; trust that origin as well.

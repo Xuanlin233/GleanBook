@@ -1,4 +1,5 @@
 import { dayIn, emptyLedger, type Ledger } from './domain';
+import { tr } from './i18n';
 export function demoLedger(): Ledger {
   const l = emptyLedger(),
     now = new Date(),
@@ -7,7 +8,7 @@ export function demoLedger(): Ledger {
   l.accounts = [
     {
       id: 'demo-cash',
-      name: '随身现金',
+      name: tr('随身现金'),
       kind: 'cash',
       currency: 'CNY',
       opening: '800',
@@ -15,7 +16,7 @@ export function demoLedger(): Ledger {
     },
     {
       id: 'demo-wechat',
-      name: '微信余额',
+      name: tr('微信余额'),
       kind: 'wechat',
       currency: 'CNY',
       opening: '2380.50',
@@ -23,7 +24,7 @@ export function demoLedger(): Ledger {
     },
     {
       id: 'demo-alipay',
-      name: '支付宝余额',
+      name: tr('支付宝余额'),
       kind: 'alipay',
       currency: 'CNY',
       opening: '3560.25',
@@ -31,7 +32,7 @@ export function demoLedger(): Ledger {
     },
     {
       id: 'demo-bank',
-      name: '招商银行 · 储蓄',
+      name: tr('招商银行 · 储蓄'),
       kind: 'bank',
       currency: 'CNY',
       opening: '108650.80',
@@ -47,7 +48,7 @@ export function demoLedger(): Ledger {
       fee: '0',
       categoryId: 'food',
       occurredAt: at(today, 9),
-      note: '一杯咖啡，开启今天',
+      note: tr('一杯咖啡，开启今天'),
       cnyRate: '1',
     },
     {
@@ -58,7 +59,7 @@ export function demoLedger(): Ledger {
       fee: '0',
       categoryId: 'shop',
       occurredAt: at(Math.max(1, today - 1)),
-      note: '给生活添一点绿意',
+      note: tr('给生活添一点绿意'),
       cnyRate: '1',
     },
     {
@@ -69,7 +70,7 @@ export function demoLedger(): Ledger {
       fee: '0',
       categoryId: 'transport',
       occurredAt: at(Math.max(1, today - 1), 8),
-      note: '下班打车',
+      note: tr('下班打车'),
       cnyRate: '1',
     },
     {
@@ -80,7 +81,7 @@ export function demoLedger(): Ledger {
       fee: '0',
       categoryId: 'salary',
       occurredAt: at(1),
-      note: '这个月的努力，有了回响',
+      note: tr('这个月的努力，有了回响'),
       cnyRate: '1',
     },
     {
@@ -91,7 +92,7 @@ export function demoLedger(): Ledger {
       fee: '0',
       categoryId: 'home',
       occurredAt: at(1),
-      note: '房租',
+      note: tr('房租'),
       cnyRate: '1',
     },
     {
@@ -102,46 +103,46 @@ export function demoLedger(): Ledger {
       fee: '0',
       categoryId: 'food',
       occurredAt: at(Math.max(1, today - 3)),
-      note: '和朋友吃顿好饭',
+      note: tr('和朋友吃顿好饭'),
       cnyRate: '1',
     },
   ];
   l.holdings = [
     {
       id: 'demo-gold',
-      name: '国泰黄金 ETF 联接 A',
+      name: tr('国泰黄金 ETF 联接 A'),
       kind: 'fund',
       symbol: '000218',
       quantity: '4356.7821',
       cost: '12500',
       currency: 'CNY',
       source: 'manual',
-      location: '支付宝 · 演示',
+      location: tr('支付宝 · 演示'),
       price: {
         value: '3.1286',
         currency: 'CNY',
         asOf: at(today),
         fetchedAt: at(today),
-        source: '演示数据，不是真实净值',
+        source: tr('演示数据，不是真实净值'),
         mode: 'manual',
       },
     },
     {
       id: 'demo-300',
-      name: '易方达沪深 300 ETF 联接 A',
+      name: tr('易方达沪深 300 ETF 联接 A'),
       kind: 'fund',
       symbol: '110020',
       quantity: '12560.3281',
       cost: '18400',
       currency: 'CNY',
       source: 'manual',
-      location: '支付宝 · 演示',
+      location: tr('支付宝 · 演示'),
       price: {
         value: '1.6352',
         currency: 'CNY',
         asOf: at(today),
         fetchedAt: at(today),
-        source: '演示数据，不是真实净值',
+        source: tr('演示数据，不是真实净值'),
         mode: 'manual',
       },
     },
@@ -154,38 +155,38 @@ export function demoLedger(): Ledger {
       cost: '2310',
       currency: 'USDT',
       source: 'manual',
-      location: 'OKX · 演示',
+      location: tr('OKX · 演示'),
       price: {
         value: '82120.5',
         currency: 'USDT',
         asOf: at(today),
         fetchedAt: at(today),
-        source: '演示数据，不是真实行情',
+        source: tr('演示数据，不是真实行情'),
         mode: 'manual',
       },
     },
     {
       id: 'demo-earn',
-      name: 'USDT 简单赚币',
+      name: tr('USDT 简单赚币'),
       kind: 'earn',
       symbol: 'USDT',
       quantity: '5000',
       cost: '5000',
       currency: 'USDT',
       source: 'manual',
-      location: 'OKX · 演示',
+      location: tr('OKX · 演示'),
       price: {
         value: '1',
         currency: 'USDT',
         asOf: at(today),
         fetchedAt: at(today),
-        source: '1 USDT / USDT，同币种单位价格；演示',
+        source: tr('1 USDT / USDT，同币种单位价格；演示'),
         mode: 'manual',
       },
     },
   ];
   l.rates = [
-    { currency: 'USDT', value: '7.08', source: '演示换算，不是真实汇率', asOf: at(today) },
+    { currency: 'USDT', value: '7.08', source: tr('演示换算，不是真实汇率'), asOf: at(today) },
   ];
   l.budgets = [{ month: at(today).slice(0, 7), categoryId: null, amount: '8000' }];
   l.snapshots = Array.from({ length: 12 }, (_, i) => {

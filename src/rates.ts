@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Ledger } from './domain';
+import { tr } from './i18n';
 
 const autoRateSchema = z.object({
   currency: z.enum(['USD', 'USDT', 'USDC', 'HKD', 'EUR']),
@@ -53,6 +54,6 @@ export async function loadAutoRates(l: Ledger, now = Date.now()): Promise<AutoRa
     credentials: 'omit',
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('自动汇率暂不可用，已保留原有汇率');
+  if (!res.ok) throw new Error(tr('自动汇率暂不可用，已保留原有汇率'));
   return z.object({ rates: z.array(autoRateSchema).max(10) }).parse(await res.json()).rates;
 }

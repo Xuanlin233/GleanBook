@@ -1,4 +1,5 @@
 import { D, rateFor, type Ledger } from './domain';
+import { tr } from './i18n';
 
 const isAmount = (v: string) => /^\d+(\.\d+)?$/.test(v.trim()) && D(v).gt(0);
 const places = (currency: string) => (['CNY', 'USD', 'HKD', 'EUR'].includes(currency) ? 2 : 8);
@@ -32,8 +33,8 @@ export function transferQuote(
   const premium = actual.div(ref).minus(1).mul(100);
   result.reference = `1 ${toCurrency} = ${ref.toDecimalPlaces(4).toFixed()} ${from}`;
   result.premiumText = premium.abs().lt(0.05)
-    ? '与参考汇率一致'
-    : `${premium.gt(0) ? '溢价' : '折价'} ${premium.abs().toDecimalPlaces(2).toFixed()}%`;
+    ? tr('与参考汇率一致')
+    : `${premium.gt(0) ? tr('溢价') : tr('折价')} ${premium.abs().toDecimalPlaces(2).toFixed()}%`;
   const principal = D(received).mul(ref).toDecimalPlaces(places(from)),
     extra = D(amount).minus(principal);
   if (extra.gt(0) && premium.gte(0.05))

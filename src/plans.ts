@@ -11,6 +11,7 @@ import {
   type Plan,
   type PlanRun,
 } from './domain';
+import { locale, tr } from './i18n';
 
 // ---------- Schedule ----------
 
@@ -163,12 +164,18 @@ export function settle(
 ): PlanRun {
   const { target, sourceCurrency } = planEnds(l, run);
   const fx = run.fxRate ? D(run.fxRate) : runFx(l, sourceCurrency, target.currency);
-  if (!fx) throw new Error(`缺少 ${sourceCurrency}/CNY 或 ${target.currency}/CNY 汇率，无法换算`);
+  if (!fx)
+    throw new Error(
+      tr('缺少 {sourceCurrency}/CNY 或 {currency}/CNY 汇率，无法换算', {
+        sourceCurrency,
+        currency: target.currency,
+      }),
+    );
   const T = target.currency,
     S = sourceCurrency,
     price = D(targetPrice.price),
     rate = D(run.feeRate).div(100);
-  if (!price.gt(0)) throw new Error('价格无效');
+  if (!price.gt(0)) throw new Error(tr('价格无效'));
   let grossT: Decimal, grossS: Decimal, fee: Decimal, quantity: Decimal;
   if (run.mode === 'amount') {
     const amount = D(run.amount);
@@ -184,12 +191,12 @@ export function settle(
     grossT = net.plus(fee);
     grossS = S === T ? grossT : roundMoney(grossT.div(fx), S);
   }
-  if (!quantity.gt(0)) throw new Error('金额不足以买入最小单位');
+  if (!quantity.gt(0)) throw new Error(tr('金额不足以买入最小单位'));
   let sourceAmount = grossS,
     sourceUnitPrice: string | undefined;
   if (run.sourceType === 'holding') {
     const source = l.holdings.find((h) => h.id === run.sourceId)!;
-    if (!sourcePrice) throw new Error('来源持仓缺少价格');
+    if (!sourcePrice) throw new Error(tr('来源持仓缺少价格'));
     sourceUnitPrice = sourcePrice.price;
     // Sell enough source units to cover the cost.
     sourceAmount = roundUnits(grossS.div(sourcePrice.price), source, Decimal.ROUND_UP);
@@ -204,9 +211,9 @@ export function settle(
     fee: str(fee),
     targetPrice: targetPrice.price,
     sourcePrice: sourceUnitPrice,
-    priceNote: [targetPrice.note, sourcePrice && '来源：' + sourcePrice.note]
+    priceNote: [targetPrice.note, sourcePrice && tr('来源：{note}', { note: sourcePrice.note })]
       .filter(Boolean)
-      .join('；')
+      .join(tr('；'))
       .slice(0, 300),
     waiting: undefined,
   };
@@ -246,7 +253,7 @@ export function generateRuns(
         amount: plan.amount,
         amountCurrency: plan.amountCurrency,
         feeRate: plan.feeRate,
-        waiting: '等待取得成交价格',
+        waiting: tr('等待取得成交价格'),
       };
       if (!runs.some((r) => r.id === run.id)) runs.push({ ...run, ...precharge(l, run) });
     }
@@ -306,18 +313,26 @@ export function createPriceResolver(deps: PriceDeps) {
       windows.set(code, [...list, hit]);
     }
     const row = hit.rows.find(fits);
-    if (row) return { price: row.value, note: `${row.navDate} 正式净值 · ${hit.source}` };
+    if (row)
+      return {
+        price: row.value,
+        note: tr('{navDate} 正式净值 · {source}', { navDate: row.navDate, source: hit.source }),
+      };
     if (hit.to < shanghai(now()).day)
-      throw new Error(`未找到 ${day} 起两周内的基金净值，请手动确认`);
-    return { wait: `等待${after15 ? ' ' + day + ' 之后首个交易日' : ' ' + day + ' '}的净值披露` };
+      throw new Error(tr('未找到 {day} 起两周内的基金净值，请手动确认', { day }));
+    return {
+      wait: after15
+        ? tr('等待 {day} 之后首个交易日的净值披露', { day })
+        : tr('等待 {day} 的净值披露', { day }),
+    };
   }
   async function crypto(symbol: string, ts: number): Promise<PriceAnswer> {
     const at = Math.floor(ts / 60000) * 60000;
-    if (at + 65000 > now()) return { wait: '等待该分钟收盘' };
+    if (at + 65000 > now()) return { wait: tr('等待该分钟收盘') };
     const key = symbol + '@' + at;
     if (!minutes.has(key)) minutes.set(key, deps.candle(symbol + '-USDT', at));
     const { open } = await minutes.get(key)!;
-    const label = new Intl.DateTimeFormat('zh-CN', {
+    const label = new Intl.DateTimeFormat(locale, {
       timeZone: 'Asia/Shanghai',
       month: '2-digit',
       day: '2-digit',
@@ -325,10 +340,14 @@ export function createPriceResolver(deps: PriceDeps) {
       minute: '2-digit',
       hourCycle: 'h23',
     }).format(new Date(at));
-    return { price: open, note: `OKX ${symbol}-USDT ${label}（北京时间）分钟开盘价` };
+    return {
+      price: open,
+      note: tr('OKX {symbol}-USDT {label}（北京时间）分钟开盘价', { symbol, label }),
+    };
   }
   return async (h: Holding, ts: number): Promise<PriceAnswer> => {
-    if (h.symbol === h.currency) return { price: '1', note: `同币种单位价格 1 ${h.currency}` };
+    if (h.symbol === h.currency)
+      return { price: '1', note: tr('同币种单位价格 1 {currency}', { currency: h.currency }) };
     if (h.kind === 'fund' && h.currency === 'CNY' && /^\d{6}$/.test(h.symbol))
       return fund(h.symbol, ts);
     if (
@@ -337,7 +356,7 @@ export function createPriceResolver(deps: PriceDeps) {
       /^[A-Z0-9]{2,12}$/.test(h.symbol)
     )
       return crypto(h.symbol, ts);
-    throw new Error('此资产无法自动取得历史价格，请手动确认成交');
+    throw new Error(tr('此资产无法自动取得历史价格，请手动确认成交'));
   };
 }
 
@@ -366,14 +385,17 @@ export async function resolveRuns(l: Ledger, deps: PriceDeps, budget = 40): Prom
         const source = l.holdings.find((h) => h.id === run.sourceId)!;
         const answer = await price(source, ts);
         if ('wait' in answer) {
-          updates.push({ id: run.id, run: { ...run, waiting: '来源' + answer.wait } });
+          updates.push({
+            id: run.id,
+            run: { ...run, waiting: tr('来源{wait}', { wait: answer.wait }) },
+          });
           continue;
         }
         s = answer;
       }
       updates.push({ id: run.id, run: settle(l, run, t, s) });
     } catch (e) {
-      const message = e instanceof Error && e.name !== 'ZodError' ? e.message : '价格数据无效';
+      const message = e instanceof Error && e.name !== 'ZodError' ? e.message : tr('价格数据无效');
       updates.push({ id: run.id, run: { ...run, waiting: message.slice(0, 300) } });
     }
   }
@@ -392,11 +414,11 @@ export function applyRunUpdates(l: Ledger, updates: RunUpdate[]): Ledger {
     try {
       current = u.run.status === 'confirmed' ? validateLedger(candidate) : candidate;
     } catch (e) {
-      const reason = e instanceof Error && e.name !== 'ZodError' ? e.message : '数据校验未通过';
+      const reason = e instanceof Error && e.name !== 'ZodError' ? e.message : tr('数据校验未通过');
       current = {
         ...current,
         planRuns: current.planRuns.map((r) =>
-          r.id === u.id ? { ...r, waiting: ('无法入账：' + reason).slice(0, 300) } : r,
+          r.id === u.id ? { ...r, waiting: tr('无法入账：{reason}', { reason }).slice(0, 300) } : r,
         ),
       };
     }
@@ -422,7 +444,7 @@ async function getJSON(url: string) {
   const raw = await res.json().catch(() => null);
   if (!res.ok)
     throw new Error(
-      raw && typeof raw.error === 'string' ? raw.error.slice(0, 200) : '后端未运行或请求失败',
+      raw && typeof raw.error === 'string' ? raw.error.slice(0, 200) : tr('后端未运行或请求失败'),
     );
   return raw;
 }

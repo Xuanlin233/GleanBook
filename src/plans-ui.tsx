@@ -16,9 +16,18 @@ import { type Commit } from './forms';
 import { autoPriced, cachedCalendar, holidayPublished, nextOccurrence, runFx } from './plans';
 import { formatAt } from './pages';
 import { Button, Empty, ErrorText, Field, Icon, IconButton, Notice, Panel, humanError } from './ui';
+import { tr } from './i18n';
 
-const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-const unitOf = (h: Holding) => (h.kind === 'fund' ? '份' : h.symbol);
+const weekdays = [
+  tr('周一'),
+  tr('周二'),
+  tr('周三'),
+  tr('周四'),
+  tr('周五'),
+  tr('周六'),
+  tr('周日'),
+];
+const unitOf = (h: Holding) => (h.kind === 'fund' ? tr('份') : h.symbol);
 const hidden = (l: Ledger, v: string) => (l.settings.hideAmounts ? '••••' : v);
 const round = (v: string | undefined, places = 8) =>
   v === undefined ? '—' : D(v).toDecimalPlaces(places).toFixed();
@@ -26,34 +35,36 @@ const round = (v: string | undefined, places = 8) =>
 export function scheduleText(p: Plan) {
   const when =
     p.frequency === 'weekly'
-      ? `每${weekdays[(p.weekday ?? 1) - 1]}`
+      ? tr('每{weekday}', { weekday: weekdays[(p.weekday ?? 1) - 1] })
       : p.frequency === 'biweekly'
-        ? `每两周的${weekdays[(p.weekday ?? 1) - 1]}`
+        ? tr('每两周的{weekday}', { weekday: weekdays[(p.weekday ?? 1) - 1] })
         : p.frequency === 'monthly'
-          ? `每月 ${p.monthDay} 日${p.monthDay! > 28 ? '（小月取月末）' : ''}`
+          ? p.monthDay! > 28
+            ? tr('每月 {day} 日（小月取月末）', { day: p.monthDay })
+            : tr('每月 {day} 日', { day: p.monthDay })
           : planFrequencies[p.frequency];
-  return `${when} ${p.time}${p.skipHolidays ? ' · 节假日不扣款' : ''}`;
+  return `${when} ${p.time}${p.skipHolidays ? tr(' · 节假日不扣款') : ''}`;
 }
 // No next period: either the plan ended, or a holiday-skipping plan awaits next year's notice.
 function noNextText(p: Plan) {
-  if (!p.active) return '已暂停';
+  if (!p.active) return tr('已暂停');
   const year = new Date().getFullYear();
   if (p.skipHolidays && (!p.endDate || p.endDate > `${year}-12-31`) && !holidayPublished(year + 1))
-    return `等待 ${year + 1} 年节假日安排公布`;
-  return '无后续期数';
+    return tr('等待 {year} 年节假日安排公布', { year: year + 1 });
+  return tr('无后续期数');
 }
 export function amountText(l: Ledger, p: Plan) {
   const target = l.holdings.find((h) => h.id === p.targetId);
   return p.mode === 'amount'
-    ? `定额 ${p.amount} ${p.amountCurrency}`
-    : `定份额 ${p.amount} ${target ? unitOf(target) : ''}`;
+    ? tr('定额 {amount} {amountCurrency}', { amount: p.amount, amountCurrency: p.amountCurrency })
+    : tr('定份额 {amount} {unit}', { amount: p.amount, unit: target ? unitOf(target) : '' });
 }
 function endsText(l: Ledger, p: Plan | PlanRun) {
   try {
     const { target, sourceName } = planEnds(l, p);
     return `${sourceName} → ${target.name}`;
   } catch {
-    return '来源或去向已不存在';
+    return tr('来源或去向已不存在');
   }
 }
 
@@ -68,11 +79,11 @@ export function PlansPanel({
 }) {
   return (
     <Panel
-      title="定投计划"
+      title={tr('定投计划')}
       aside={
         <Button variant="text" onClick={onNew}>
           <Icon name="plus" size={17} />
-          新建定投
+          {tr('新建定投')}
         </Button>
       }
     >
@@ -90,7 +101,7 @@ export function PlansPanel({
                 <span className="holding-copy">
                   <strong>
                     {p.name}
-                    <span className="tiny-pill">{p.active ? '执行中' : '已暂停'}</span>
+                    <span className="tiny-pill">{p.active ? tr('执行中') : tr('已暂停')}</span>
                   </strong>
                   <span>{endsText(l, p)}</span>
                   <small>
@@ -98,11 +109,13 @@ export function PlansPanel({
                   </small>
                 </span>
                 <span className="holding-value">
-                  <strong>{runs.length - waiting} 期已入账</strong>
-                  {waiting > 0 && <small>{waiting} 期待处理</small>}
+                  <strong>{tr('{count} 期已入账', { count: runs.length - waiting })}</strong>
+                  {waiting > 0 && <small>{tr('{count} 期待处理', { count: waiting })}</small>}
                   <small>
                     {next
-                      ? '下次 ' + formatAt(new Date(next).toISOString(), p.timezone)
+                      ? tr('下次 {time}', {
+                          time: formatAt(new Date(next).toISOString(), p.timezone),
+                        })
                       : noNextText(p)}
                   </small>
                 </span>
@@ -114,9 +127,9 @@ export function PlansPanel({
       ) : (
         <Empty
           icon="calendar"
-          title="还没有定投计划"
-          description="设定来源账户或持仓、去向持仓和频率，打开网站时自动按当期价格入账。"
-          action={<Button onClick={onNew}>新建定投</Button>}
+          title={tr('还没有定投计划')}
+          description={tr('设定来源账户或持仓、去向持仓和频率，打开网站时自动按当期价格入账。')}
+          action={<Button onClick={onNew}>{tr('新建定投')}</Button>}
         />
       )}
     </Panel>
@@ -141,14 +154,14 @@ export function PlanForm({
       .filter((a) => a.source === 'manual' && a.kind !== 'liability')
       .map((a) => ({
         key: 'account:' + a.id,
-        name: `${a.name}（${a.currency} 账户）`,
+        name: tr('{name}（{currency} 账户）', { name: a.name, currency: a.currency }),
         currency: a.currency,
       })),
     ...l.holdings
       .filter((h) => h.source === 'manual')
       .map((h) => ({
         key: 'holding:' + h.id,
-        name: `${h.name}（持仓 · ${h.currency}）`,
+        name: tr('{name}（持仓 · {currency}）', { name: h.name, currency: h.currency }),
         currency: h.currency,
       })),
   ];
@@ -199,10 +212,10 @@ export function PlanForm({
         setError('');
         setBusy(true);
         try {
-          if (!target) throw new Error('请选择定投去向持仓');
+          if (!target) throw new Error(tr('请选择定投去向持仓'));
           const plan: Plan = {
             id: record?.id ?? uid(),
-            name: name.trim() || `${target.name} 定投`,
+            name: name.trim() || tr('{name} 定投', { name: target.name }),
             sourceType,
             sourceId,
             targetId,
@@ -238,10 +251,10 @@ export function PlanForm({
       }}
     >
       <div className="form-grid">
-        <Field label="资金来源（账户或持仓）">
+        <Field label={tr('资金来源（账户或持仓）')}>
           <select value={source} onChange={(e) => setSource(e.target.value)} required>
             <option value="" disabled>
-              请选择手动维护的账户或持仓
+              {tr('请选择手动维护的账户或持仓')}
             </option>
             {sources.map((s) => (
               <option key={s.key} value={s.key}>
@@ -250,14 +263,18 @@ export function PlanForm({
             ))}
           </select>
         </Field>
-        <Field label="定投去向（持仓）">
+        <Field label={tr('定投去向（持仓）')}>
           <select value={targetId} onChange={(e) => setTarget(e.target.value)} required>
             <option value="" disabled>
-              请选择手动维护的持仓
+              {tr('请选择手动维护的持仓')}
             </option>
             {targets.map((h) => (
               <option key={h.id} value={h.id}>
-                {h.name}（{h.symbol} · {h.currency}）
+                {tr('{name}（{symbol} · {currency}）', {
+                  name: h.name,
+                  symbol: h.symbol,
+                  currency: h.currency,
+                })}
               </option>
             ))}
           </select>
@@ -266,8 +283,8 @@ export function PlanForm({
       <div className="segmented type-switch">
         {(
           [
-            ['amount', '定额：每期固定金额'],
-            ['quantity', '定份额：每期固定数量'],
+            ['amount', tr('定额：每期固定金额')],
+            ['quantity', tr('定份额：每期固定数量')],
           ] as const
         ).map(([k, label]) => (
           <button
@@ -283,9 +300,11 @@ export function PlanForm({
       <div className="form-grid">
         <Field
           label={
-            mode === 'amount' ? '每期金额' : `每期买入数量（${target ? unitOf(target) : '单位'}）`
+            mode === 'amount'
+              ? tr('每期金额')
+              : tr('每期买入数量（{unit}）', { unit: target ? unitOf(target) : tr('单位') })
           }
-          hint={mode === 'amount' ? '含手续费的总扣款' : '手续费另计，按当期价格折算扣款'}
+          hint={mode === 'amount' ? tr('含手续费的总扣款') : tr('手续费另计，按当期价格折算扣款')}
         >
           <input
             inputMode="decimal"
@@ -296,27 +315,27 @@ export function PlanForm({
         </Field>
         {mode === 'amount' ? (
           <Field
-            label="金额币种"
-            hint={currencyChoices.length > 1 ? '可按来源或去向币种计' : undefined}
+            label={tr('金额币种')}
+            hint={currencyChoices.length > 1 ? tr('可按来源或去向币种计') : undefined}
           >
             <select value={moneyCurrency ?? ''} onChange={(e) => setAmountCurrency(e.target.value)}>
               {currencyChoices.map((c) => (
                 <option key={c} value={c}>
                   {c}
-                  {c === sourceCurrency ? '（来源币种）' : '（去向币种）'}
+                  {c === sourceCurrency ? tr('（来源币种）') : tr('（去向币种）')}
                 </option>
               ))}
             </select>
           </Field>
         ) : (
-          <Field label="计价币种">
+          <Field label={tr('计价币种')}>
             <input value={target?.currency ?? ''} disabled />
           </Field>
         )}
-        <Field label="手续费率（%）" hint="外扣法：净额 = 金额 ÷ (1 + 费率)">
+        <Field label={tr('手续费率（%）')} hint={tr('外扣法：净额 = 金额 ÷ (1 + 费率)')}>
           <input inputMode="decimal" value={feeRate} onChange={(e) => setFeeRate(e.target.value)} />
         </Field>
-        <Field label="频率">
+        <Field label={tr('频率')}>
           <select
             value={frequency}
             onChange={(e) => setFrequency(e.target.value as Plan['frequency'])}
@@ -329,7 +348,7 @@ export function PlanForm({
           </select>
         </Field>
         {['weekly', 'biweekly'].includes(frequency) && (
-          <Field label="星期">
+          <Field label={tr('星期')}>
             <select value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
               {weekdays.map((w, i) => (
                 <option key={w} value={i + 1}>
@@ -340,20 +359,26 @@ export function PlanForm({
           </Field>
         )}
         {frequency === 'monthly' && (
-          <Field label="每月日期">
+          <Field label={tr('每月日期')}>
             <select value={monthDay} onChange={(e) => setMonthDay(Number(e.target.value))}>
               {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                 <option key={d} value={d}>
-                  {d} 日{d > 28 ? '（小月取月末）' : ''}
+                  {tr('{d} 日', { d })}
+                  {d > 28 ? tr('（小月取月末）') : ''}
                 </option>
               ))}
             </select>
           </Field>
         )}
-        <Field label={`执行时间（${record?.timezone ?? l.settings.timezone}）`} hint="精确到分钟">
+        <Field
+          label={tr('执行时间（{timezone}）', {
+            timezone: record?.timezone ?? l.settings.timezone,
+          })}
+          hint={tr('精确到分钟')}
+        >
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
         </Field>
-        <Field label="开始日期">
+        <Field label={tr('开始日期')}>
           <input
             type="date"
             value={startDate}
@@ -361,71 +386,87 @@ export function PlanForm({
             required
           />
         </Field>
-        <Field label="结束日期（选填）">
+        <Field label={tr('结束日期（选填）')}>
           <input type="date" value={endDate} onChange={(e) => setEnd(e.target.value)} />
         </Field>
-        <Field label="计划名称（选填）">
+        <Field label={tr('计划名称（选填）')}>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={60}
-            placeholder={target ? `${target.name} 定投` : ''}
+            placeholder={target ? tr('{name} 定投', { name: target.name }) : ''}
           />
         </Field>
       </div>
-      <Field label="备注">
+      <Field label={tr('备注')}>
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
       </Field>
       <label className="checkbox-label">
         <input type="checkbox" checked={skipHolidays} onChange={(e) => setSkip(e.target.checked)} />
-        节假日不扣款：执行日是周末或法定节假日（沪深交易所休市日）时跳过这一期，不顺延
+        {tr('节假日不扣款：执行日是周末或法定节假日（沪深交易所休市日）时跳过这一期，不顺延')}
       </label>
       {skipHolidays && ['weekly', 'biweekly'].includes(frequency) && weekday >= 6 && (
-        <Notice tone="warning">所选星期是周末，开启“节假日不扣款”后这个计划永远不会执行。</Notice>
+        <Notice tone="warning">
+          {tr('所选星期是周末，开启“节假日不扣款”后这个计划永远不会执行。')}
+        </Notice>
       )}
       {skipHolidays && (
         <p className="form-footnote">
-          节假日依据国务院放假通知（holiday-cn 公开数据）。下一年的安排通常在 11–12
-          月公布，公布前该年工作日的期数会暂缓生成，公布后自动补上。
+          {tr(
+            '节假日依据国务院放假通知（holiday-cn 公开数据）。下一年的安排通常在 11–12 月公布，公布前该年工作日的期数会暂缓生成，公布后自动补上。',
+          )}
         </p>
       )}
       {target && (
         <Notice>
           {target.kind === 'fund' && autoPriced(target)
-            ? `基金按正式净值成交：15:00 前下单用当日净值，15:00 及以后用下一交易日净值${skipHolidays ? '' : '，执行日是节假日时顺延到下一交易日'}；净值公布前显示“待处理”，公布后自动算出份额。`
+            ? skipHolidays
+              ? tr(
+                  '基金按正式净值成交：15:00 前下单用当日净值，15:00 及以后用下一交易日净值；净值公布前显示“待处理”，公布后自动算出份额。',
+                )
+              : tr(
+                  '基金按正式净值成交：15:00 前下单用当日净值，15:00 及以后用下一交易日净值，执行日是节假日时顺延到下一交易日；净值公布前显示“待处理”，公布后自动算出份额。',
+                )
             : autoPriced(target) && target.symbol !== target.currency
-              ? `按 OKX ${target.symbol}-USDT 在执行时间那一分钟的开盘价成交，每期独立取价。`
+              ? tr('按 OKX {symbol}-USDT 在执行时间那一分钟的开盘价成交，每期独立取价。', {
+                  symbol: target.symbol,
+                })
               : autoPriced(target)
-                ? `同币种单位价格 1 ${target.currency}。`
-                : '此资产无法自动取得历史价格，每期需要在记录中手动确认成交数量和金额。'}
+                ? tr('同币种单位价格 1 {currency}。', { currency: target.currency })
+                : tr('此资产无法自动取得历史价格，每期需要在记录中手动确认成交数量和金额。')}
           {mode === 'amount' && sourceType === 'account'
-            ? ' 定额且来源为账户时，到期即从账户扣款，份额确定前计为待确认本金。'
-            : ' 价格确定后才同时扣减来源、增加去向。'}
+            ? tr(' 定额且来源为账户时，到期即从账户扣款，份额确定前计为待确认本金。')
+            : tr(' 价格确定后才同时扣减来源、增加去向。')}
         </Notice>
       )}
       {!record && startDate < today && (
         <Notice tone="warning">
-          开始日期早于今天：保存后会按计划补记从 {startDate} 起每一期，并按各期当时的价格结算。
+          {tr(
+            '开始日期早于今天：保存后会按计划补记从 {startDate} 起每一期，并按各期当时的价格结算。',
+            { startDate },
+          )}
         </Notice>
       )}
       {missingRates.length > 0 && (
         <Notice tone="warning">
-          来源与去向币种不同，缺少 {missingRates.join('、')}/CNY 汇率。请到 设置 → 汇率与统计
-          补充，否则各期无法结算。结算时会锁定当时的汇率。
+          {tr(
+            '来源与去向币种不同，缺少 {currencies}/CNY 汇率。请到 设置 → 汇率与统计 补充，否则各期无法结算。结算时会锁定当时的汇率。',
+            { currencies: missingRates.join(tr('、')) },
+          )}
         </Notice>
       )}
       {record && (
-        <p className="form-footnote">修改只影响以后生成的期数，已生成的记录保留原条款。</p>
+        <p className="form-footnote">{tr('修改只影响以后生成的期数，已生成的记录保留原条款。')}</p>
       )}
       <ErrorText error={error} />
       <div className="form-actions">
-        <Button onClick={onClose}>取消</Button>
+        <Button onClick={onClose}>{tr('取消')}</Button>
         <Button
           type="submit"
           variant="primary"
           disabled={busy || !sources.length || !targets.length}
         >
-          保存定投计划
+          {tr('保存定投计划')}
         </Button>
       </div>
     </form>
@@ -443,7 +484,7 @@ export function RunList({
   onRun: (r: PlanRun) => void;
   onDelete: (r: PlanRun) => void;
 }) {
-  if (!runs.length) return <p className="subtle">尚无到期的定投记录。</p>;
+  if (!runs.length) return <p className="subtle">{tr('尚无到期的定投记录。')}</p>;
   return (
     <div>
       {[...runs]
@@ -468,20 +509,35 @@ export function RunList({
                 <strong>
                   {r.planName}{' '}
                   <span className="tiny-pill">
-                    {r.status === 'confirmed' ? (r.manual ? '手动确认' : '已入账') : '待处理'}
+                    {r.status === 'confirmed'
+                      ? r.manual
+                        ? tr('手动确认')
+                        : tr('已入账')
+                      : tr('待处理')}
                   </span>
                 </strong>
                 <p>
                   {formatAt(r.scheduledAt, l.settings.timezone)} ·{' '}
                   {r.status === 'confirmed'
-                    ? `扣 ${hidden(l, round(r.sourceAmount))} ${sourceUnit} → 买入 ${hidden(l, round(r.targetQuantity))} ${unit}${r.targetPrice ? ' @ ' + round(r.targetPrice) : ''}`
+                    ? tr('扣 {paid} {sourceUnit} → 买入 {bought} {unit}', {
+                        paid: hidden(l, round(r.sourceAmount)),
+                        sourceUnit,
+                        bought: hidden(l, round(r.targetQuantity)),
+                        unit,
+                      }) + (r.targetPrice ? ' @ ' + round(r.targetPrice) : '')
                     : r.mode === 'amount'
-                      ? `定额 ${r.amount} ${r.amountCurrency}${r.sourceAmount ? ' · 已预扣款' : ''}`
-                      : `定份额 ${r.amount} ${unit}`}
+                      ? tr('定额 {amount} {amountCurrency}', {
+                          amount: r.amount,
+                          amountCurrency: r.amountCurrency,
+                        }) + (r.sourceAmount ? tr(' · 已预扣款') : '')
+                      : tr('定份额 {amount} {unit}', { amount: r.amount, unit })}
                 </p>
                 {r.status === 'confirmed' && r.fee !== undefined && D(r.fee).gt(0) && (
                   <p>
-                    手续费 {hidden(l, round(r.fee))} · 含费成本 {hidden(l, round(r.targetCost))}
+                    {tr('手续费 {fee} · 含费成本 {cost}', {
+                      fee: hidden(l, round(r.fee)),
+                      cost: hidden(l, round(r.targetCost)),
+                    })}
                   </p>
                 )}
                 {r.priceNote && <p>{r.priceNote}</p>}
@@ -489,9 +545,13 @@ export function RunList({
               </div>
               <div className="button-group">
                 <Button variant="text" onClick={() => onRun(r)}>
-                  {r.status === 'pending' ? '手动确认' : '修改'}
+                  {r.status === 'pending' ? tr('手动确认') : tr('修改')}
                 </Button>
-                <IconButton name="trash" label="删除这期定投记录" onClick={() => onDelete(r)} />
+                <IconButton
+                  name="trash"
+                  label={tr('删除这期定投记录')}
+                  onClick={() => onDelete(r)}
+                />
               </div>
             </div>
           );
@@ -541,7 +601,7 @@ export function PlanDetail({
     <div className="detail-body">
       <div className="detail-hero">
         <span>
-          {p.active ? '执行中' : '已暂停'} · {scheduleText(p)}
+          {p.active ? tr('执行中') : tr('已暂停')} · {scheduleText(p)}
         </span>
         <strong>{amountText(l, p)}</strong>
         <p>{endsText(l, p)}</p>
@@ -549,38 +609,41 @@ export function PlanDetail({
       {broken && <Notice tone="warning">{broken}</Notice>}
       <div className="detail-grid">
         <div>
-          <span>下次执行</span>
+          <span>{tr('下次执行')}</span>
           <strong>
             {next ? formatAt(new Date(next).toISOString(), p.timezone) : noNextText(p)}
           </strong>
         </div>
         <div>
-          <span>已入账期数</span>
+          <span>{tr('已入账期数')}</span>
           <strong>
-            {done.length} 期
-            {runs.length > done.length ? ` · ${runs.length - done.length} 期待处理` : ''}
+            {tr('{count} 期', { count: done.length })}
+            {runs.length > done.length
+              ? tr(' · {count} 期待处理', { count: runs.length - done.length })
+              : ''}
           </strong>
         </div>
         <div>
-          <span>累计扣减来源</span>
+          <span>{tr('累计扣减来源')}</span>
           <strong>
             {hidden(l, sum('sourceAmount'))} {sourceUnit}
           </strong>
         </div>
         <div>
-          <span>累计买入</span>
+          <span>{tr('累计买入')}</span>
           <strong>
             {hidden(l, sum('targetQuantity'))} {unit}
           </strong>
         </div>
         <div>
-          <span>手续费率</span>
+          <span>{tr('手续费率')}</span>
           <strong>{p.feeRate}%</strong>
         </div>
         <div>
-          <span>期间</span>
+          <span>{tr('期间')}</span>
           <strong>
-            {p.startDate} 起{p.endDate ? ` 至 ${p.endDate}` : ''}
+            {tr('{startDate} 起', { startDate: p.startDate })}
+            {p.endDate ? tr(' 至 {endDate}', { endDate: p.endDate }) : ''}
           </strong>
         </div>
       </div>
@@ -588,7 +651,7 @@ export function PlanDetail({
       <div className="button-group wrap">
         <Button variant="primary" onClick={onEdit}>
           <Icon name="edit" />
-          编辑计划
+          {tr('编辑计划')}
         </Button>
         <Button
           onClick={() =>
@@ -606,22 +669,24 @@ export function PlanDetail({
               ),
             }))
               .then(() =>
-                notify(p.active ? '定投已暂停' : '定投已恢复，从现在开始，不补记暂停期间'),
+                notify(p.active ? tr('定投已暂停') : tr('定投已恢复，从现在开始，不补记暂停期间')),
               )
               .catch((e) => notify(humanError(e)))
           }
         >
-          {p.active ? '暂停' : '恢复'}
+          {p.active ? tr('暂停') : tr('恢复')}
         </Button>
       </div>
-      <h3 className="detail-subheading">执行记录</h3>
+      <h3 className="detail-subheading">{tr('执行记录')}</h3>
       <RunList ledger={l} runs={runs} onRun={onRun} onDelete={onDeleteRun} />
       <div className="detail-danger">
         <Button
           variant="text"
           onClick={() => {
             if (
-              !confirm('删除此定投计划？已入账的记录会保留，待处理的期数会一并删除并退回预扣款。')
+              !confirm(
+                tr('删除此定投计划？已入账的记录会保留，待处理的期数会一并删除并退回预扣款。'),
+              )
             )
               return;
             onSave((s) => ({
@@ -631,13 +696,13 @@ export function PlanDetail({
             }))
               .then(() => {
                 onClose();
-                notify('定投计划已删除，已入账记录保留');
+                notify(tr('定投计划已删除，已入账记录保留'));
               })
               .catch((e) => notify(humanError(e)));
           }}
         >
           <Icon name="trash" size={17} />
-          删除计划
+          {tr('删除计划')}
         </Button>
       </div>
     </div>
@@ -679,7 +744,7 @@ export function RunForm({
         e.preventDefault();
         setError('');
         try {
-          if (D(fee).gt(cost)) throw new Error('手续费不能超过含费成本');
+          if (D(fee).gt(cost)) throw new Error(tr('手续费不能超过含费成本'));
           await onSave((s) => ({
             ...s,
             planRuns: s.planRuns.map((r) =>
@@ -696,7 +761,7 @@ export function RunForm({
                     targetPrice: D(quantity).gt(0)
                       ? D(cost).minus(fee).div(quantity).toDecimalPlaces(8).toFixed()
                       : undefined,
-                    priceNote: '按实际成交手动确认',
+                    priceNote: tr('按实际成交手动确认'),
                     waiting: undefined,
                   }
                 : r,
@@ -709,11 +774,13 @@ export function RunForm({
       }}
     >
       <Notice>
-        {formatAt(run.scheduledAt, l.settings.timezone)} · {run.planName}
-        。按平台的实际确认单填写；手动确认后不再自动取价。
+        {tr('{time} · {planName}。按平台的实际确认单填写；手动确认后不再自动取价。', {
+          time: formatAt(run.scheduledAt, l.settings.timezone),
+          planName: run.planName,
+        })}
       </Notice>
       <div className="form-grid">
-        <Field label={`买入数量（${unitOf(target)}）`}>
+        <Field label={tr('买入数量（{unit}）', { unit: unitOf(target) })}>
           <input
             inputMode="decimal"
             value={quantity}
@@ -721,7 +788,7 @@ export function RunForm({
             required
           />
         </Field>
-        <Field label={`含费成本（${target.currency}）`}>
+        <Field label={tr('含费成本（{currency}）', { currency: target.currency })}>
           <input
             inputMode="decimal"
             value={cost}
@@ -729,7 +796,7 @@ export function RunForm({
             required
           />
         </Field>
-        <Field label={`其中手续费（${target.currency}）`}>
+        <Field label={tr('其中手续费（{currency}）', { currency: target.currency })}>
           <input
             inputMode="decimal"
             value={fee}
@@ -738,7 +805,11 @@ export function RunForm({
           />
         </Field>
         <Field
-          label={source ? `卖出来源数量（${unitOf(source)}）` : `来源扣款（${sourceCurrency}）`}
+          label={
+            source
+              ? tr('卖出来源数量（{unit}）', { unit: unitOf(source) })
+              : tr('来源扣款（{sourceCurrency}）', { sourceCurrency })
+          }
         >
           <input
             inputMode="decimal"
@@ -748,7 +819,7 @@ export function RunForm({
           />
         </Field>
         {source && (
-          <Field label={`来源成交单价（${source.currency}）`}>
+          <Field label={tr('来源成交单价（{currency}）', { currency: source.currency })}>
             <input
               inputMode="decimal"
               value={sourcePrice}
@@ -760,9 +831,9 @@ export function RunForm({
       </div>
       <ErrorText error={error} />
       <div className="form-actions">
-        <Button onClick={onClose}>取消</Button>
+        <Button onClick={onClose}>{tr('取消')}</Button>
         <Button type="submit" variant="primary">
-          确认这期成交
+          {tr('确认这期成交')}
         </Button>
       </div>
     </form>

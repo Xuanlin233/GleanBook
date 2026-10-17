@@ -1,0 +1,14 @@
+# Store text with LF in the repository on every OS; Windows checkouts keep LF too, so
+# Prettier, diffs and CI see the same bytes everywhere.
+* text=auto eol=lf
+
+# cmd.exe and Windows PowerShell expect CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+*.zip binary

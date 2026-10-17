@@ -7,6 +7,9 @@ import path from 'node:path';
 // e.g. a custom install folder on another drive).
 function candidates() {
   const list = ['tailscale'];
+  // The macOS app (App Store or standalone) ships its CLI inside the bundle.
+  if (process.platform === 'darwin')
+    list.push('/Applications/Tailscale.app/Contents/MacOS/Tailscale');
   if (process.platform !== 'win32') return list;
   try {
     const out = execFileSync(

@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
 import { emptyLedger, validateLedger, type Ledger } from './domain';
+import { tr } from './i18n';
 const db = openDB('shizhang', 1, {
   upgrade(db) {
     db.createObjectStore('data');
@@ -49,7 +50,7 @@ export async function writeLedger(
   if ((previous?.revision ?? 0) !== expected) {
     t.abort();
     await t.done.catch(() => {});
-    throw new Error('账本已在其他窗口更新，请刷新后重试。未提交的表单仍保留。');
+    throw new Error(tr('账本已在其他窗口更新，请刷新后重试。未提交的表单仍保留。'));
   }
   clean.revision = expected + 1;
   await t.store.put(clean, mode);

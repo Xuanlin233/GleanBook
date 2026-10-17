@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { D, type Ledger, type Holding, type Account } from './domain';
 import { type Commit } from './forms';
 import { Button, Field, Panel, Notice, ErrorText, Modal, humanError, Icon } from './ui';
+import { locale, tr } from './i18n';
 const rowSchema = z.object({
   key: z.string().max(100),
   location: z.enum(['funding', 'trading', 'earn']),
@@ -30,9 +31,9 @@ async function api(path: string, options?: RequestInit) {
   try {
     raw = await res.json();
   } catch {
-    throw new Error('后端未运行或返回内容无效，请按运行文档启动服务');
+    throw new Error(tr('后端未运行或返回内容无效，请按运行文档启动服务'));
   }
-  if (!res.ok) throw new Error((raw as { error?: string }).error ?? '后端请求失败');
+  if (!res.ok) throw new Error((raw as { error?: string }).error ?? tr('后端请求失败'));
   return raw;
 }
 export function ConnectionSettings({
@@ -83,23 +84,24 @@ export function ConnectionSettings({
   };
   return (
     <>
-      <Panel title="OKX 只读持仓">
+      <Panel title={tr('OKX 只读持仓')}>
         <div className="connection-status">
           <span className={`status-dot ${authenticated && configured ? 'configured' : ''}`} />
           <strong>
             {authenticated
               ? configured
                 ? lastRead
-                  ? '只读读取已验证 · 持仓覆盖待核对'
-                  : '后端已配置 · 实盘覆盖待核对'
-                : '后端已鉴权 · OKX 凭证未配置'
-              : '未连接'}
+                  ? tr('只读读取已验证 · 持仓覆盖待核对')
+                  : tr('后端已配置 · 实盘覆盖待核对')
+                : tr('后端已鉴权 · OKX 凭证未配置')
+              : tr('未连接')}
           </strong>
-          <span className="tiny-pill">可选后端 · 实验性</span>
+          <span className="tiny-pill">{tr('可选后端 · 实验性')}</span>
         </div>
         <Notice>
-          需要在后端部署平台配置只读密钥。这里仅输入独立的“后端访问口令”，不要填写 OKX API
-          Secret、Passphrase、账户密码、私钥或助记词。
+          {tr(
+            '需要在后端部署平台配置只读密钥。这里仅输入独立的“后端访问口令”，不要填写 OKX API Secret、Passphrase、账户密码、私钥或助记词。',
+          )}
         </Notice>
         {!authenticated ? (
           <form
@@ -117,22 +119,22 @@ export function ConnectionSettings({
               });
             }}
           >
-            <Field label="后端访问口令">
+            <Field label={tr('后端访问口令')}>
               <input
                 type="password"
                 autoComplete="off"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="由部署者在服务端安全配置"
+                placeholder={tr('由部署者在服务端安全配置')}
                 required
               />
             </Field>
             <div className="button-group wrap">
               <Button variant="primary" type="submit" disabled={busy || mode === 'demo'}>
-                验证后端
+                {tr('验证后端')}
               </Button>
               <Button onClick={() => wrap(check)} disabled={busy || mode === 'demo'}>
-                检查已有会话
+                {tr('检查已有会话')}
               </Button>
             </div>
           </form>
@@ -151,7 +153,7 @@ export function ConnectionSettings({
               }
             >
               <Icon name="refresh" />
-              {busy ? '读取中…' : '读取持仓并预览'}
+              {busy ? tr('读取中…') : tr('读取持仓并预览')}
             </Button>
             <Button
               onClick={() =>
@@ -164,73 +166,85 @@ export function ConnectionSettings({
                   if ('caches' in window)
                     for (const key of await caches.keys())
                       if (key.includes('private')) await caches.delete(key);
-                  notify('后端会话已退出。当前设备账本与已确认的持仓快照保留。');
+                  notify(tr('后端会话已退出。当前设备账本与已确认的持仓快照保留。'));
                 })
               }
             >
               <Icon name="logout" />
-              退出后端会话
+              {tr('退出后端会话')}
             </Button>
           </div>
         )}
         <ErrorText error={error} />
         <div className="setting-description long-copy">
-          支持各账户模式，但非现货模式下必须没有未平仓的杠杆、合约或期权仓位（否则现金余额不含未实现盈亏）；只读取资金余额、交易现金余额和简单赚币活期。三者全部读取成功才可导入；赚币总额
-          amt 不再叠加 loanAmt 与
-          pendingAmt。不导入成交、充值提现或全部历史收益；不保证覆盖定期产品、Web3、代币化股票及中间划转状态。发现借贷、隔离仓位或明确赎回中金额时停止更新。接口不返回所有产品并不表示未返回产品余额为零，请始终和
-          App 总览对账。
+          {tr(
+            '支持各账户模式，但非现货模式下必须没有未平仓的杠杆、合约或期权仓位（否则现金余额不含未实现盈亏）；只读取资金余额、交易现金余额和简单赚币活期。三者全部读取成功才可导入；赚币总额 amt 不再叠加 loanAmt 与 pendingAmt。不导入成交、充值提现或全部历史收益；不保证覆盖定期产品、Web3、代币化股票及中间划转状态。发现借贷、隔离仓位或明确赎回中金额时停止更新。接口不返回所有产品并不表示未返回产品余额为零，请始终和 App 总览对账。',
+          )}
         </div>
         <Notice tone="warning">
           {lastRead
-            ? `本后端最近成功读取时间：${new Date(lastRead).toLocaleString('zh-CN')}。仍须与 App 逐项对账。`
-            : '本后端尚未完成真实账户读取验证。'}
-          多个余额接口无法保证原子读取，申赎或划转过程中请勿导入。若已有手动 OKX
-          持仓，导入前移除对应重复项。
+            ? tr('本后端最近成功读取时间：{time}。仍须与 App 逐项对账。', {
+                time: new Date(lastRead).toLocaleString(locale),
+              })
+            : tr('本后端尚未完成真实账户读取验证。')}
+          {tr(
+            '多个余额接口无法保证原子读取，申赎或划转过程中请勿导入。若已有手动 OKX 持仓，导入前移除对应重复项。',
+          )}
         </Notice>
       </Panel>
-      <Panel title="公共行情与基金">
+      <Panel title={tr('公共行情与基金')}>
         <div className="setting-row">
           <div>
-            <strong>OKX 公共现货行情</strong>
-            <p>已实际请求验证 BTC-USDT、ETH-USDT、OKB-USDT、USDC-USDT；不代表私人账户已连接。</p>
-          </div>
-          <span className="tiny-pill">需要后端网络可达</span>
-        </div>
-        <div className="setting-row">
-          <div>
-            <strong>正式基金净值</strong>
+            <strong>{tr('OKX 公共现货行情')}</strong>
             <p>
-              任意 6 位代码的公募基金免费获取正式单位净值，每 6
-              小时最多一次；失败保留旧值。免费来源无服务承诺，货币基金需手动记录收益。
+              {tr('已实际请求验证 BTC-USDT、ETH-USDT、OKB-USDT、USDC-USDT；不代表私人账户已连接。')}
             </p>
           </div>
-          <span className="tiny-pill">免费 · 无需 Key</span>
+          <span className="tiny-pill">{tr('需要后端网络可达')}</span>
+        </div>
+        <div className="setting-row">
+          <div>
+            <strong>{tr('正式基金净值')}</strong>
+            <p>
+              {tr(
+                '任意 6 位代码的公募基金免费获取正式单位净值，每 6 小时最多一次；失败保留旧值。免费来源无服务承诺，货币基金需手动记录收益。',
+              )}
+            </p>
+          </div>
+          <span className="tiny-pill">{tr('免费 · 无需 Key')}</span>
         </div>
         <p className="setting-description">
-          来源顺序：000218、110020
-          先用基金公司官网；其余及官网失败时依次使用东方财富天天基金、新浪财经。你的份额与成本需自行核对，不从截图推算。
+          {tr(
+            '来源顺序：000218、110020 先用基金公司官网；其余及官网失败时依次使用东方财富天天基金、新浪财经。你的份额与成本需自行核对，不从截图推算。',
+          )}
         </p>
       </Panel>
-      <Panel title="每日快照与云同步">
+      <Panel title={tr('每日快照与云同步')}>
         <Notice>
-          未部署后端定时任务，未实现云同步。只在打开、刷新或本地数据更新时覆盖当前统计日快照。关闭
-          iPhone PWA 后不保证后台运行。不存在的历史日期不会补齐。
+          {tr(
+            '未部署后端定时任务，未实现云同步。只在打开、刷新或本地数据更新时覆盖当前统计日快照。关闭 iPhone PWA 后不保证后台运行。不存在的历史日期不会补齐。',
+          )}
         </Notice>
       </Panel>
       {preview && (
-        <Modal title="核对 OKX 只读快照" onClose={() => setPreview(null)} wide>
+        <Modal title={tr('核对 OKX 只读快照')} onClose={() => setPreview(null)} wide>
           <div className="form">
             <Notice tone="warning">
-              本次共有 {preview.rows.length}{' '}
-              项。请核对资金、交易与赚币归属，申赎中资产、未覆盖产品以及与手动持仓的重复。导入替换上次
-              OKX 快照，手动数据保留。
+              {tr(
+                '本次共有 {count} 项。请核对资金、交易与赚币归属，申赎中资产、未覆盖产品以及与手动持仓的重复。导入替换上次 OKX 快照，手动数据保留。',
+                { count: preview.rows.length },
+              )}
             </Notice>
             <div className="sync-preview">
               {preview.rows.map((r) => (
                 <div key={r.key}>
                   <span>
-                    {{ funding: '资金账户', trading: '交易账户', earn: '简单赚币' }[r.location]} ·{' '}
-                    {r.currency}
+                    {
+                      { funding: tr('资金账户'), trading: tr('交易账户'), earn: tr('简单赚币') }[
+                        r.location
+                      ]
+                    }{' '}
+                    · {r.currency}
                   </span>
                   <strong>{l.settings.hideAmounts ? '••••' : r.quantity}</strong>
                 </div>
@@ -243,11 +257,11 @@ export function ConnectionSettings({
                 checked={reconciled}
                 onChange={(e) => setReconciled(e.target.checked)}
               />
-              我已核对 OKX 总览，确认没有重复手动持仓、在途划转或遗漏需要单独维护的资产
+              {tr('我已核对 OKX 总览，确认没有重复手动持仓、在途划转或遗漏需要单独维护的资产')}
             </label>
             <ErrorText error={error} />
             <div className="form-actions">
-              <Button onClick={() => setPreview(null)}>取消</Button>
+              <Button onClick={() => setPreview(null)}>{tr('取消')}</Button>
               <Button
                 variant="primary"
                 disabled={!reconciled || busy}
@@ -255,13 +269,13 @@ export function ConnectionSettings({
                   wrap(async () => {
                     await onSave((s) => applySync(s, preview));
                     setPreview(null);
-                    notify('只读快照已导入，正在获取行情与汇率…');
+                    notify(tr('只读快照已导入，正在获取行情与汇率…'));
                     // Price every imported coin and fill the USDT/CNY rate right away.
                     onImported();
                   })
                 }
               >
-                确认覆盖 OKX 快照
+                {tr('确认覆盖 OKX 快照')}
               </Button>
             </div>
           </div>
@@ -287,14 +301,19 @@ export function applySync(l: Ledger, result: SyncResult): Ledger {
   const missing = [
     ...oldAccounts
       .filter((a) => !a.externalKey || !accountKeys.has(a.externalKey))
-      .map((a) => `账户 ${a.name}（${a.externalKey}）`),
+      .map((a) => tr('账户 {name}（{externalKey}）', { name: a.name, externalKey: a.externalKey })),
     ...oldHoldings
       .filter((h) => !h.externalKey || !holdingKeys.has(h.externalKey))
-      .map((h) => `持仓 ${h.name}（${h.externalKey ?? '缺少标识'}）`),
+      .map((h) =>
+        tr('持仓 {name}（{key}）', { name: h.name, key: h.externalKey ?? tr('缺少标识') }),
+      ),
   ];
   if (missing.length)
     throw new Error(
-      `新快照缺少以下已有 OKX 项目：${missing.join('；')}。本次未覆盖任何数据，请先核对这些项目；未返回不等于余额为零。`,
+      tr(
+        '新快照缺少以下已有 OKX 项目：{missing}。本次未覆盖任何数据，请先核对这些项目；未返回不等于余额为零。',
+        { missing: missing.join(tr('；')) },
+      ),
     );
   const accounts = l.accounts.filter((a) => !isOKXAccount(a)),
     holdings = l.holdings.filter((h) => h.source !== 'okx');
@@ -303,7 +322,7 @@ export function applySync(l: Ledger, result: SyncResult): Ledger {
       const previous = oldAccounts.find((a) => a.externalKey === r.key),
         a: Account = {
           id: previous?.id ?? 'okx-' + r.key.replace(/[^a-zA-Z0-9_-]/g, '_'),
-          name: `OKX ${r.location === 'funding' ? '资金' : '交易'} · ${r.currency}`,
+          name: `OKX ${r.location === 'funding' ? tr('资金') : tr('交易')} · ${r.currency}`,
           currency: r.currency as Account['currency'],
           source: 'external',
           kind: 'manual',
@@ -317,7 +336,7 @@ export function applySync(l: Ledger, result: SyncResult): Ledger {
       const previous = l.holdings.find((h) => h.source === 'okx' && h.externalKey === r.key);
       const h: Holding = {
         id: previous?.id ?? 'okx-' + r.key.replace(/[^a-zA-Z0-9_-]/g, '_'),
-        name: r.currency + (r.location === 'earn' ? ' 简单赚币' : ''),
+        name: r.currency + (r.location === 'earn' ? tr(' 简单赚币') : ''),
         kind: r.location === 'earn' ? 'earn' : 'crypto',
         symbol: r.currency,
         quantity: r.quantity,
@@ -326,10 +345,10 @@ export function applySync(l: Ledger, result: SyncResult): Ledger {
         source: 'okx',
         location:
           r.location === 'funding'
-            ? 'OKX 资金'
+            ? tr('OKX 资金')
             : r.location === 'trading'
-              ? 'OKX 交易'
-              : 'OKX 简单赚币',
+              ? tr('OKX 交易')
+              : tr('OKX 简单赚币'),
         externalKey: r.key,
         updatedAt: r.at,
         earnings: r.earnings,
@@ -339,7 +358,7 @@ export function applySync(l: Ledger, result: SyncResult): Ledger {
             ? {
                 value: '1',
                 currency: 'USDT',
-                source: '同币种单位价格：1 USDT / USDT（非美元汇率）',
+                source: tr('同币种单位价格：1 USDT / USDT（非美元汇率）'),
                 mode: 'manual',
                 asOf: r.at,
                 fetchedAt: r.at,

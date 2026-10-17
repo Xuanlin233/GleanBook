@@ -68,12 +68,14 @@ tun:
 
 ## 开机自动启动（可选）
 
-希望登录 Windows 后网站自动运行、手机随时能同步时：
+希望登录电脑后网站自动运行、手机随时能同步时：
 
 1. 先手动运行一次 `npm run start:private`，输入并保存 OKX 只读凭证与网站访问口令；
 2. 在项目文件夹运行 `npm run autostart:on`。
 
 之后每次登录 Windows，任务栏会出现最小化的“拾账 · 网站后端”窗口，网站随之运行，不需要输入任何内容。
+
+macOS 使用 LaunchAgent（日志在 `~/Library/Logs/Gleanbook/launcher.log`），Linux 使用 systemd 用户服务（`journalctl --user -u gleanbook -f` 查看日志）；两者在后台运行，没有窗口。以下关于窗口和 Clash Verge 的说明只适用于 Windows。
 
 - 如果你使用 Clash Verge / Mihomo 等代理软件，启动脚本会先等它的 TUN 网卡或系统代理就绪（最多 3 分钟），再连接 OKX；连不上时每 5 秒重试，最多 2 分钟，之后网站照常运行。未安装 Clash Verge 时不等待，直接启动。
 - 运行中切换代理的 TUN / 系统代理模式会被自动识别，不用重启。

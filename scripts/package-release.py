@@ -12,7 +12,8 @@ roots = ['src', 'server', 'public', 'scripts', 'tests', 'docs']
 files = ['package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.ts',
          'playwright.config.ts', 'index.html', 'README.md', '.env.example',
          '.gitignore', '.dockerignore', '.prettierrc.json', 'Dockerfile',
-         'LICENSE', 'SECURITY.md', 'CONTRIBUTING.md']
+         'LICENSE', 'SECURITY.md', 'CONTRIBUTING.md', 'README.en.md', 'CHANGELOG.md',
+         'ROADMAP.md', '.gitattributes']
 source_files = [root / f for f in files]
 for folder in roots:
     source_files.extend(p for p in (root / folder).rglob('*') if p.is_file())

@@ -5,6 +5,7 @@
 // Not synced: `intraday` (each device's own observations), `settings.theme` (per device)
 // and `revision` (local optimistic-lock counter).
 import { emptyLedger, validateLedger, type Ledger } from './domain';
+import { tr } from './i18n';
 
 export type SyncOp =
   | { kind: 'put'; key: string; at: string; value: unknown }
@@ -62,7 +63,7 @@ function split(key: string): [Collection, string] {
     i < 0 ||
     !(idCollections as readonly string[]).concat(['rates', 'budgets', 'settings']).includes(coll)
   )
-    throw new Error('未知的同步记录类型');
+    throw new Error(tr('未知的同步记录类型'));
   return [coll, key.slice(i + 1)];
 }
 // Pure: returns a new ledger with one record replaced, added or removed. Shapes are checked
@@ -83,7 +84,7 @@ export function applyOp(l: Ledger, op: SyncOp): Ledger {
   const rest = list.filter((r) => keyOf(r) !== id);
   if (op.kind === 'delete') return rest.length === list.length ? l : { ...l, [coll]: rest };
   if (!op.value || typeof op.value !== 'object' || keyOf(op.value) !== id)
-    throw new Error('同步记录与标识不一致');
+    throw new Error(tr('同步记录与标识不一致'));
   const i = list.findIndex((r) => keyOf(r) === id);
   const next = [...list];
   if (i >= 0) next[i] = op.value;
@@ -106,7 +107,7 @@ export function applyOps(l: Ledger, ops: SyncOp[]) {
         current = validateLedger(applyOp(current, op));
         applied.push(op);
       } catch (e) {
-        const reason = e instanceof Error && e.name !== 'ZodError' ? e.message : '数据格式不符';
+        const reason = e instanceof Error && e.name !== 'ZodError' ? e.message : tr('数据格式不符');
         rejected.push({ key: op.key, reason: reason.slice(0, 200) });
       }
     }

@@ -10,13 +10,14 @@ import {
   type Transaction,
 } from './domain';
 import { addDays, daysInMonth, isoWeekday, zonedTime } from './plans';
+import { tr } from './i18n';
 
 // Charges are booked at the start of the billing day in the subscription's time zone, so
 // opening the site any time that day books it.
 export const BILLING_TIME = '00:00';
 export const SUBSCRIPTION_CATEGORY: Category = {
   id: 'subscription',
-  name: '订阅服务',
+  name: tr('订阅服务'),
   kind: 'expense',
   icon: 'calendar',
 };
@@ -95,7 +96,12 @@ export function chargeSubscriptions(l: Ledger, now = Date.now()) {
     if (!account) return s;
     const fx = account.currency === 'CNY' ? D(1) : rateFor(l, account.currency);
     if (!fx) {
-      blocked.push(`${s.name}：缺少 ${account.currency}/CNY 汇率，暂缓扣款`);
+      blocked.push(
+        tr('{name}：缺少 {currency}/CNY 汇率，暂缓扣款', {
+          name: s.name,
+          currency: account.currency,
+        }),
+      );
       return s;
     }
     for (const ts of times) {
@@ -109,7 +115,7 @@ export function chargeSubscriptions(l: Ledger, now = Date.now()) {
         fee: '0',
         categoryId: s.categoryId,
         occurredAt: new Date(ts).toISOString(),
-        note: `订阅自动扣款：${s.name}`,
+        note: tr('订阅自动扣款：{name}', { name: s.name }),
         cnyRate: exact(fx.toDecimalPlaces(12)),
         subscriptionId: s.id,
       };

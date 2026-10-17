@@ -7,6 +7,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:8788',
     headless: true,
+    // The tests read the Chinese interface; the app picks English for other browser languages.
+    locale: 'zh-CN',
     launchOptions: {
       executablePath:
         process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
