@@ -23,7 +23,7 @@ afterAll(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-describe.runIf(canSaveCredentials())('Windows 加密保存凭证', () => {
+describe.runIf(process.platform === 'win32' && canSaveCredentials())('Windows 加密保存凭证', () => {
   const c = {
     key: 'dummy-key-not-real',
     secret: 'dummy-secret-not-real',
